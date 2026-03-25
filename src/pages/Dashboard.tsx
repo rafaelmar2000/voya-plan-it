@@ -51,9 +51,9 @@ const Dashboard = () => {
     try {
       const res = await fetch(VOYA_API_URL, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
         },
         body: payload,
       });
