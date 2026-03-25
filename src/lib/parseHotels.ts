@@ -22,7 +22,8 @@ export interface ParsedHotel {
   extendedDetails: ParsedExtendedDetails;
 }
 
-const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "DETALHES_EXTENDIDOS", "DETALHES_TECNICOS"] as const;
+
+const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "FOTO", "DETALHES_EXTENDIDOS", "DETALHES_TECNICOS"] as const;
 const TECHNICAL_DETAIL_TAGS = ["WIFI", "SEGURANCA", "WORKSPACE", "LOGISTICA"] as const;
 
 type TechnicalDetailTag = (typeof TECHNICAL_DETAIL_TAGS)[number];
@@ -321,6 +322,7 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
       const price = extractTaggedValue(block, "PRECO") || "Consultar";
       const summary = extractTaggedValue(block, "RESUMO");
       const rawDetails = extractTaggedValue(block, "DETALHES_TECNICOS") || extractTaggedValue(block, "DETALHES_EXTENDIDOS");
+      const imageUrl = extractTaggedValue(block, "FOTO") || undefined;
 
       if (!name || !summary || !rawDetails) return null;
 
@@ -336,7 +338,8 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
         badge: buildBadge(summary, rawDetails, kind),
         kind,
         extendedDetails,
-      } satisfies ParsedHotel;
+        imageUrl,
+      } as ParsedHotel;
     })
     .filter((hotel): hotel is ParsedHotel => hotel !== null);
 
