@@ -1,3 +1,15 @@
+export type ParsedSuggestionKind = "hotel" | "flight" | "attraction" | "generic";
+
+export interface ParsedExtendedDetails {
+  raw: string;
+  internetSpeed?: string;
+  equipmentSecurity?: string;
+  workspacePhotos?: string;
+  photographyTips: string[];
+  schedule: string[];
+  lightingTips: string[];
+}
+
 export interface ParsedHotel {
   name: string;
   price: string;
@@ -5,79 +17,262 @@ export interface ParsedHotel {
   description: string;
   highlights: string[];
   badge: string;
+  kind: ParsedSuggestionKind;
+  extendedDetails: ParsedExtendedDetails;
 }
 
-/**
- * Extracts hotel data from the Voya AI response text.
- * Handles multiple formatting patterns from Gemini output.
- */
-export function parseHotelsFromText(text: string): { introText: string; hotels: ParsedHotel[] } {
-  const hotels: ParsedHotel[] = [];
+const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "DETALHES_EXTENDIDOS"] as const;
 
-  // Split by numbered items: "1.", "2.", "1)", "2)" etc.
+function normalizeText(value: string): string {
+  return value
+    .replace(/\r/g, "")
+    .replace(/[\t ]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function cleanBullet(line: string): string {
+  return normalizeText(line.replace(/^[-•✓✔]\s*/, ""));
+}
+
+function dedupe(items: string[]): string[] {
+  return [...new Set(items.map((item) => normalizeText(item)).filter(Boolean))];
+}
+
+function extractTaggedValue(block: string, tag: (typeof TAGGED_FIELDS)[number]): string {
+  const pairedRegex = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, "i");
+  const pairedMatch = block.match(pairedRegex);
+  if (pairedMatch) return normalizeText(pairedMatch[1]);
+
+  const nextTags = TAGGED_FIELDS.filter((field) => field !== tag).join("|");
+  const inlineRegex = new RegExp(`\\[${tag}\\]\\s*([\\s\\S]*?)(?=\\n\\s*\\[(?:${nextTags})\\]|$)`, "i");
+  const inlineMatch = block.match(inlineRegex);
+  return inlineMatch ? normalizeText(inlineMatch[1]) : "";
+}
+
+function extractLabeledValue(line: string): string {
+  const [, value = ""] = line.split(/:\s*/, 2);
+  return normalizeText(value);
+}
+
+function extractLocation(...sources: string[]): string {
+  const combined = sources.filter(Boolean).join("\n");
+  const match = combined.match(
+    /(?:localiza[çc][ãa]o|localizado|fica|bairro|regi[ãa]o|endere[çc]o|em)\s*:?\s*([^\n.,]{3,60})/i,
+  );
+  return match ? normalizeText(match[1].replace(/\*+/g, "")) : "";
+}
+
+function detectKind(name: string, summary: string, details: string): ParsedSuggestionKind {
+  const source = `${name} ${summary} ${details}`.toLowerCase();
+  if (/(?:voo|flight|partida|chegada|embarque|terminal|escala)/.test(source)) return "flight";
+  if (/(?:atra[çc][ãa]o|attraction|museu|parque|ingresso|golden hour|p[ôo]r do sol)/.test(source)) return "attraction";
+  if (/(?:hotel|resort|hostel|pousada|quarto|di[áa]ria)/.test(source)) return "hotel";
+  return "generic";
+}
+
+function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
+  const details: ParsedExtendedDetails = {
+    raw: normalizeText(rawDetails),
+    photographyTips: [],
+    schedule: [],
+    lightingTips: [],
+  };
+
+  const fallbackBullets: string[] = [];
+  const lines = rawDetails
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let activeSection: "photography" | "schedule" | "lighting" | null = null;
+
+  for (const originalLine of lines) {
+    const line = normalizeText(originalLine);
+    const bullet = cleanBullet(originalLine);
+
+    if (/^(?:velocidade\s+de\s+internet|wi-?fi|internet)\s*:/i.test(line)) {
+      details.internetSpeed = extractLabeledValue(line);
+      activeSection = null;
+      continue;
+    }
+
+    if (/^(?:seguran[çc]a\s+de\s+equipamento|seguran[çc]a(?:\s+para)?\s+equipamentos?|equipment security)\s*:/i.test(line)) {
+      details.equipmentSecurity = extractLabeledValue(line);
+      activeSection = null;
+      continue;
+    }
+
+    if (/^(?:fotos?\s+do\s+workspace|workspace|coworking)\s*:/i.test(line)) {
+      details.workspacePhotos = extractLabeledValue(line);
+      activeSection = null;
+      continue;
+    }
+
+    const photographyMatch = line.match(/^(?:dicas?\s+de\s+fotografia|fotografia|photo tips)\s*:?(.*)$/i);
+    if (photographyMatch) {
+      const inlineValue = normalizeText(photographyMatch[1] || "");
+      if (inlineValue) details.photographyTips.push(inlineValue);
+      activeSection = "photography";
+      continue;
+    }
+
+    const scheduleMatch = line.match(/^(?:hor[aá]rios?|partida|chegada|embarque|abertura|fechamento|dura[çc][ãa]o|check-?in|check-?out)\s*:?(.*)$/i);
+    if (scheduleMatch) {
+      const inlineValue = normalizeText(scheduleMatch[1] || "");
+      details.schedule.push(inlineValue ? `${line.split(":", 1)[0]}: ${inlineValue}` : line);
+      activeSection = "schedule";
+      continue;
+    }
+
+    const lightingMatch = line.match(/^(?:golden\s+hour|tipo\s+de\s+luz|luz\s+ideal|melhor\s+luz|ilumina[çc][ãa]o)\s*:?(.*)$/i);
+    if (lightingMatch) {
+      const inlineValue = normalizeText(lightingMatch[1] || "");
+      details.lightingTips.push(inlineValue ? `${line.split(":", 1)[0]}: ${inlineValue}` : line);
+      activeSection = "lighting";
+      continue;
+    }
+
+    if (/^[-•✓✔]/.test(originalLine)) {
+      if (activeSection === "photography") details.photographyTips.push(bullet);
+      else if (activeSection === "schedule") details.schedule.push(bullet);
+      else if (activeSection === "lighting") details.lightingTips.push(bullet);
+      else fallbackBullets.push(bullet);
+      continue;
+    }
+
+    if (activeSection === "photography") details.photographyTips.push(line);
+    else if (activeSection === "schedule") details.schedule.push(line);
+    else if (activeSection === "lighting") details.lightingTips.push(line);
+  }
+
+  if (!details.internetSpeed) {
+    const speedMatch = rawDetails.match(/(?:velocidade\s+de\s+internet|wi-?fi|internet)\s*:?\s*([^\n]+)/i);
+    if (speedMatch) details.internetSpeed = normalizeText(speedMatch[1]);
+  }
+
+  if (!details.equipmentSecurity) {
+    const securityMatch = rawDetails.match(/(?:seguran[çc]a\s+de\s+equipamento|seguran[çc]a(?:\s+para)?\s+equipamentos?)\s*:?\s*([^\n]+)/i);
+    if (securityMatch) details.equipmentSecurity = normalizeText(securityMatch[1]);
+  }
+
+  details.photographyTips = dedupe(details.photographyTips.length > 0 ? details.photographyTips : fallbackBullets.slice(0, 4));
+  details.schedule = dedupe(details.schedule);
+  details.lightingTips = dedupe(details.lightingTips);
+
+  return details;
+}
+
+function buildBadge(summary: string, details: string, kind: ParsedSuggestionKind): string {
+  const source = `${summary} ${details}`.toLowerCase();
+  const badgeMap: [RegExp, string][] = [
+    [/(?:luxo|premium)/, "Alto Luxo"],
+    [/(?:5 estrelas|★★★★★)/, "★★★★★"],
+    [/(?:4 estrelas|★★★★)/, "★★★★"],
+    [/(?:boutique)/, "Hotel Boutique"],
+    [/(?:golden hour|luz dourada)/, "Golden Hour"],
+    [/(?:metro|mobilidade|transporte)/, "Fácil Acesso"],
+    [/(?:seguran[çc]a)/, "Segurança 24h"],
+  ];
+
+  for (const [pattern, label] of badgeMap) {
+    if (pattern.test(source)) return label;
+  }
+
+  if (kind === "flight") return "Logística de Voo";
+  if (kind === "attraction") return "Spot Recomendado";
+  return "Recomendado pelo Voya";
+}
+
+function buildHighlights(details: ParsedExtendedDetails): string[] {
+  return dedupe([
+    details.internetSpeed ? `Internet: ${details.internetSpeed}` : "",
+    details.equipmentSecurity ? `Segurança: ${details.equipmentSecurity}` : "",
+    ...details.photographyTips,
+    ...details.schedule,
+    ...details.lightingTips,
+  ]).slice(0, 5);
+}
+
+function parseTaggedSuggestions(text: string): { introText: string; hotels: ParsedHotel[] } {
+  const introText = normalizeText(text.split(/\[NOME\]/i)[0] || "");
+  const blocks = text
+    .split(/(?=\[NOME\])/i)
+    .map((block) => block.trim())
+    .filter((block) => block.startsWith("[NOME]"));
+
+  const hotels = blocks
+    .map((block) => {
+      const name = extractTaggedValue(block, "NOME");
+      const price = extractTaggedValue(block, "PRECO") || "Consultar";
+      const summary = extractTaggedValue(block, "RESUMO");
+      const rawDetails = extractTaggedValue(block, "DETALHES_EXTENDIDOS");
+
+      if (!name || !summary || !rawDetails) return null;
+
+      const kind = detectKind(name, summary, rawDetails);
+      const extendedDetails = parseExtendedDetails(rawDetails);
+
+      return {
+        name,
+        price,
+        location: extractLocation(summary, rawDetails),
+        description: summary,
+        highlights: buildHighlights(extendedDetails),
+        badge: buildBadge(summary, rawDetails, kind),
+        kind,
+        extendedDetails,
+      } satisfies ParsedHotel;
+    })
+    .filter((hotel): hotel is ParsedHotel => hotel !== null);
+
+  return { introText, hotels };
+}
+
+function parseLegacySuggestions(text: string): { introText: string; hotels: ParsedHotel[] } {
+  const hotels: ParsedHotel[] = [];
   const parts = text.split(/\n(?=\d+[\.\)]\s)/);
-  const introText = parts[0]?.trim() || "";
+  const introText = normalizeText(parts[0] || "");
 
   for (let i = 1; i < parts.length; i++) {
     const block = parts[i];
-
-    // Extract name: "1. **Hotel Name**" or "1. Hotel Name - ..." or "1. Hotel Name:"
     const nameMatch = block.match(/^\d+[\.\)]\s+\*{0,2}([^*\n\-:]+?)\*{0,2}\s*[\-:\n]/);
     if (!nameMatch) continue;
 
-    const name = nameMatch[1].replace(/\*+/g, "").trim();
+    const name = normalizeText(nameMatch[1].replace(/\*+/g, ""));
     if (!name || name.length < 3) continue;
 
-    // Extract price: R$ 450, $120, €90, USD 200, US$ 300
     const priceMatch = block.match(
-      /(?:R\$|US\$|\$|€|EUR|USD)\s?[\d.,]+(?:\s*(?:por noite|\/noite|per night|\/night|a diária))?/i
+      /(?:R\$|US\$|\$|€|EUR|USD)\s?[\d.,]+(?:\s*(?:por noite|\/noite|per night|\/night|a diária))?/i,
     );
-    const price = priceMatch ? priceMatch[0].trim() : "Consultar";
+    const price = priceMatch ? normalizeText(priceMatch[0]) : "Consultar";
+    const descriptionMatch = block.match(/[\-:]\s*\*{0,2}([^*\n•\-]{15,150})/);
+    const description = descriptionMatch ? normalizeText(descriptionMatch[1].replace(/\*+/g, "")) : "";
+    const extendedDetails = parseExtendedDetails(block);
+    const kind = detectKind(name, description, block);
 
-    // Extract location from patterns like "Localização: ...", "em ...", "bairro de ..."
-    const locMatch = block.match(
-      /(?:localiza[çc][ãa]o|localizado|fica|bairro|regi[ãa]o|endere[çc]o|em)\s*:?\s*([^\n.,]{3,50})/i
-    );
-    const location = locMatch ? locMatch[1].replace(/\*+/g, "").trim() : "";
-
-    // Collect bullet points / highlights
-    const bulletMatches = block.match(/[-•✓✔]\s*\*{0,2}([^*\n]+)\*{0,2}/g);
-    const highlights = bulletMatches
-      ? bulletMatches
-          .map((b) => b.replace(/^[-•✓✔]\s*\*{0,2}/, "").replace(/\*{0,2}$/, "").trim())
-          .filter((h) => h.length > 2 && h.length < 100)
-          .slice(0, 5)
-      : [];
-
-    // Extract a description - first sentence after the name that isn't a bullet
-    const descMatch = block.match(/[\-:]\s*\*{0,2}([^*\n•\-]{15,150})/);
-    const description = descMatch ? descMatch[1].replace(/\*+/g, "").trim() : "";
-
-    // Generate contextual badge
-    const lowerBlock = block.toLowerCase();
-    const badgeMap: [string, string][] = [
-      ["luxo", "Alto Luxo"],
-      ["5 estrelas", "★★★★★"],
-      ["4 estrelas", "★★★★"],
-      ["boutique", "Hotel Boutique"],
-      ["praia", "Beira-Mar"],
-      ["spa", "Spa & Wellness"],
-      ["centro", "Localização Central"],
-      ["vista", "Vista Panorâmica"],
-      ["rooftop", "Rooftop"],
-      ["piscina", "Piscina"],
-      ["família", "Ideal p/ Famílias"],
-      ["históric", "Patrimônio Histórico"],
-      ["fotógraf", "Ideal p/ Fotógrafos"],
-      ["segurança", "Segurança 24h"],
-    ];
-    let badge = "Recomendado pelo Voya";
-    for (const [kw, label] of badgeMap) {
-      if (lowerBlock.includes(kw)) { badge = label; break; }
-    }
-
-    hotels.push({ name, price, location, description, highlights, badge });
+    hotels.push({
+      name,
+      price,
+      location: extractLocation(block),
+      description,
+      highlights: buildHighlights(extendedDetails),
+      badge: buildBadge(description, block, kind),
+      kind,
+      extendedDetails,
+    });
   }
 
   return { introText, hotels };
+}
+
+/**
+ * Extracts structured Voya suggestions from tagged output and falls back to the legacy parser.
+ */
+export function parseHotelsFromText(text: string): { introText: string; hotels: ParsedHotel[] } {
+  if (/\[NOME\]/i.test(text) && /\[DETALHES_EXTENDIDOS\]/i.test(text)) {
+    return parseTaggedSuggestions(text);
+  }
+
+  return parseLegacySuggestions(text);
 }
