@@ -21,6 +21,7 @@ export interface ParsedHotel {
   kind: ParsedSuggestionKind;
   extendedDetails: ParsedExtendedDetails;
 }
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 
 
 const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "FOTO", "DETALHES_EXTENDIDOS", "DETALHES_TECNICOS"] as const;
@@ -34,6 +35,7 @@ function normalizeText(value: string): string {
     .replace(/[\t ]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+  imageUrl?: string;
 }
 
 function cleanBullet(line: string): string {
