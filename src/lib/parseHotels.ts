@@ -23,6 +23,9 @@ export interface ParsedHotel {
 }
 
 const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "DETALHES_EXTENDIDOS", "DETALHES_TECNICOS"] as const;
+const TECHNICAL_DETAIL_TAGS = ["WIFI", "SEGURANCA", "WORKSPACE", "LOGISTICA"] as const;
+
+type TechnicalDetailTag = (typeof TECHNICAL_DETAIL_TAGS)[number];
 
 function normalizeText(value: string): string {
   return value
@@ -56,6 +59,58 @@ function extractLabeledValue(line: string): string {
   return normalizeText(value);
 }
 
+function hasTechnicalDetailTags(block: string): boolean {
+  return TECHNICAL_DETAIL_TAGS.some((tag) => new RegExp(`(?:^|\\n)\\s*${tag}:`, "i").test(block));
+}
+
+function extractTechnicalTagValue(block: string, tag: TechnicalDetailTag): string {
+  const normalizedBlock = block.replace(/\r/g, "");
+  const startRegex = new RegExp(`(?:^|\\n)\\s*${tag}:\\s*`, "i");
+  const startMatch = startRegex.exec(normalizedBlock);
+
+  if (!startMatch || startMatch.index === undefined) return "";
+
+  const contentStart = startMatch.index + startMatch[0].length;
+  const endRegex = /\n\s*(?:WIFI|SEGURANCA|WORKSPACE|LOGISTICA):|\n\s*\[FIM_DETALHES\]|$/gi;
+  endRegex.lastIndex = contentStart;
+
+  const endMatch = endRegex.exec(normalizedBlock);
+  const contentEnd = endMatch ? endMatch.index : normalizedBlock.length;
+
+  return normalizeText(normalizedBlock.slice(contentStart, contentEnd));
+}
+
+function removeTechnicalTagBlocks(block: string): string {
+  const normalizedBlock = block.replace(/\r/g, "");
+
+  if (!hasTechnicalDetailTags(normalizedBlock)) {
+    return normalizeText(normalizedBlock.replace(/\[FIM_DETALHES\]/gi, ""));
+  }
+
+  const markerRegex = /(?:^|\n)\s*(WIFI|SEGURANCA|WORKSPACE|LOGISTICA):\s*/gi;
+  const markers = Array.from(normalizedBlock.matchAll(markerRegex)).map((match) => ({
+    start: match.index ?? 0,
+    contentStart: (match.index ?? 0) + match[0].length,
+  }));
+
+  let cursor = 0;
+  let remaining = "";
+
+  markers.forEach((marker, index) => {
+    const nextMarkerStart = index < markers.length - 1 ? markers[index + 1].start : -1;
+    const closingMatch = /\n\s*\[FIM_DETALHES\]/i.exec(normalizedBlock.slice(marker.contentStart));
+    const closingIndex = closingMatch ? marker.contentStart + closingMatch.index : -1;
+    const blockEndCandidates = [nextMarkerStart, closingIndex].filter((value) => value >= 0);
+    const blockEnd = blockEndCandidates.length > 0 ? Math.min(...blockEndCandidates) : normalizedBlock.length;
+
+    remaining += normalizedBlock.slice(cursor, marker.start);
+    cursor = blockEnd;
+  });
+
+  remaining += normalizedBlock.slice(cursor);
+  return normalizeText(remaining.replace(/\[FIM_DETALHES\]/gi, ""));
+}
+
 function stripLeadingLabel(line: string): string {
   return normalizeText(line.replace(/^[A-ZÇ_ ]+\s*:\s*/i, ""));
 }
@@ -85,8 +140,29 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
     logistics: [],
   };
 
+  const normalizedRawDetails = rawDetails.replace(/\r/g, "");
+  const hasExactTechnicalTags = hasTechnicalDetailTags(normalizedRawDetails);
+
+  if (hasExactTechnicalTags) {
+    details.internetSpeed = extractTechnicalTagValue(normalizedRawDetails, "WIFI") || undefined;
+    details.equipmentSecurity = extractTechnicalTagValue(normalizedRawDetails, "SEGURANCA") || undefined;
+    details.workspaceDetails = extractTechnicalTagValue(normalizedRawDetails, "WORKSPACE") || undefined;
+
+    const logisticsValue = extractTechnicalTagValue(normalizedRawDetails, "LOGISTICA");
+    if (logisticsValue) {
+      details.logistics = dedupe(
+        logisticsValue
+          .split(/\n+/)
+          .map((item) => cleanBullet(item))
+          .filter(Boolean),
+      );
+    }
+  }
+
+  const fallbackSource = hasExactTechnicalTags ? removeTechnicalTagBlocks(normalizedRawDetails) : normalizedRawDetails;
+
   const fallbackBullets: string[] = [];
-  const lines = rawDetails
+  const lines = fallbackSource
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
@@ -177,22 +253,22 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
   }
 
   if (!details.internetSpeed) {
-    const speedMatch = rawDetails.match(/(?:velocidade\s+de\s+internet|wi-?fi|internet)\s*:?\s*([^\n]+)/i);
+    const speedMatch = fallbackSource.match(/(?:velocidade\s+de\s+internet|wi-?fi|internet)\s*:?\s*([^\n]+)/i);
     if (speedMatch) details.internetSpeed = normalizeText(speedMatch[1]);
   }
 
   if (!details.equipmentSecurity) {
-    const securityMatch = rawDetails.match(/(?:seguran[çc]a\s+de\s+equipamento|seguran[çc]a(?:\s+para)?\s+equipamentos?)\s*:?\s*([^\n]+)/i);
+    const securityMatch = fallbackSource.match(/(?:seguran[çc]a\s+de\s+equipamento|seguran[çc]a(?:\s+para)?\s+equipamentos?)\s*:?\s*([^\n]+)/i);
     if (securityMatch) details.equipmentSecurity = normalizeText(securityMatch[1]);
   }
 
   if (!details.workspaceDetails) {
-    const workspaceMatch = rawDetails.match(/(?:workspace|coworking|edi[çc][ãa]o|lightroom)\s*:?\s*([^\n]+)/i);
+    const workspaceMatch = fallbackSource.match(/(?:workspace|coworking|edi[çc][ãa]o|lightroom)\s*:?\s*([^\n]+)/i);
     if (workspaceMatch) details.workspaceDetails = normalizeText(workspaceMatch[1]);
   }
 
   details.photographyTips = dedupe(details.photographyTips.length > 0 ? details.photographyTips : fallbackBullets.slice(0, 4));
-  details.schedule = dedupe([...(details.logistics || []), ...details.schedule]);
+  details.schedule = dedupe(details.schedule);
   details.lightingTips = dedupe(details.lightingTips);
   details.logistics = dedupe(details.logistics || []);
 
