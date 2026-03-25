@@ -14,7 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mensagens_chat: {
+        Row: {
+          conteudo: string | null
+          created_at: string | null
+          id: string
+          papel: string | null
+          roteiro_id: string
+        }
+        Insert: {
+          conteudo?: string | null
+          created_at?: string | null
+          id?: string
+          papel?: string | null
+          roteiro_id: string
+        }
+        Update: {
+          conteudo?: string | null
+          created_at?: string | null
+          id?: string
+          papel?: string | null
+          roteiro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_chat_roteiro_id_fkey"
+            columns: ["roteiro_id"]
+            isOneToOne: false
+            referencedRelation: "roteiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roteiros: {
+        Row: {
+          created_at: string | null
+          dados_viagem: Json | null
+          destino: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dados_viagem?: Json | null
+          destino?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dados_viagem?: Json | null
+          destino?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
