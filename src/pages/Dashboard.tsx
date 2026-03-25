@@ -34,20 +34,34 @@ const Dashboard = () => {
 
   const handleSend = useCallback(async (text: string) => {
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setThinking(true);
 
-    const apiMessages = updatedMessages.map(({ role, content }) => ({ role, content }));
+    setMessages((prev) => {
+      const updated = [...prev, userMsg];
+      // Fire the API call with the definitive message list
+      dispatchToAPI(updated);
+      return updated;
+    });
+    setThinking(true);
+  }, []);
+
+  const dispatchToAPI = async (allMessages: Message[]) => {
+    const apiMessages = allMessages.map(({ role, content }) => ({ role, content }));
+    const payload = JSON.stringify({ messages: apiMessages });
 
     try {
       const res = await fetch(VOYA_API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: payload,
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}: ${errorText}`);
+      }
 
       const data = await res.json();
 
@@ -59,7 +73,8 @@ const Dashboard = () => {
       };
 
       setMessages((prev) => [...prev, reply]);
-    } catch {
+    } catch (err) {
+      console.error("[Voya] API Error:", err);
       toast({
         title: "Conexão perdida",
         description: "Não foi possível conectar ao Voya. Tente novamente.",
@@ -68,7 +83,7 @@ const Dashboard = () => {
     } finally {
       setThinking(false);
     }
-  }, [messages]);
+  };
 
   const handleNewRoteiro = () => {
     setActiveRoteiroId(null);
