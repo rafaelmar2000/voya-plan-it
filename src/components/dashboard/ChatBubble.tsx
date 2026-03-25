@@ -11,19 +11,19 @@ interface ChatBubbleProps {
 
 const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProps) => {
   const isUser = role === "user";
-  const hotels = !isUser ? parseHotelsFromText(content) : [];
-  const hasHotels = hotels.length > 0;
 
-  // Strip hotel block text if we're rendering cards instead
-  const displayText = hasHotels
-    ? content.split(/\n\d+[\.\)]\s/)[0].trim()
-    : content;
+  // Parse hotels only for assistant messages
+  const { introText, hotels } = !isUser
+    ? parseHotelsFromText(content)
+    : { introText: content, hotels: [] };
+
+  const hasHotels = hotels.length > 0;
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
-      <div className={`max-w-[85%] sm:max-w-[90%] ${isUser ? "" : "space-y-4"}`}>
-        {/* Text portion */}
-        {displayText && (
+      <div className={`${isUser ? "max-w-[85%] sm:max-w-[70%]" : "max-w-[95%] sm:max-w-[90%]"} ${isUser ? "" : "space-y-4"}`}>
+        {/* Text */}
+        {introText && (
           <div
             className={
               isUser
@@ -31,7 +31,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
                 : "text-foreground/90 text-sm leading-relaxed whitespace-pre-line"
             }
           >
-            {displayText}
+            {introText}
           </div>
         )}
 
