@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
-        body: ['"DM Sans"', 'sans-serif'],
+        display: ['"Bebas Neue"', 'sans-serif'],
+        heading: ['"Playfair Display"', 'serif'],
+        body: ['"Inter"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -51,10 +52,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          dim: "hsl(var(--gold-dim))",
-          glow: "hsl(var(--gold-glow))",
+        amber: {
+          DEFAULT: "hsl(var(--amber))",
+          dim: "hsl(var(--amber-dim))",
+          glow: "hsl(var(--amber-glow))",
+        },
+        obsidian: "hsl(var(--obsidian))",
+        charcoal: {
+          DEFAULT: "hsl(var(--charcoal))",
+          light: "hsl(var(--charcoal-light))",
         },
         surface: {
           DEFAULT: "hsl(var(--surface))",
