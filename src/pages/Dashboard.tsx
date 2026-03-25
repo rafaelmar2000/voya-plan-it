@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ChatBubble from "@/components/dashboard/ChatBubble";
 import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
-import { toast } from "@/hooks/use-toast";
 
 const VOYA_API_URL = "https://neat-dove-89.rafaelmar2000.deno.net";
 
@@ -73,13 +72,19 @@ const Dashboard = () => {
       };
 
       setMessages((prev) => [...prev, reply]);
-    } catch (err) {
-      console.error("[Voya] API Error:", err);
-      toast({
-        title: "Conexão perdida",
-        description: "Não foi possível conectar ao Voya. Tente novamente.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      const resolvedError = error instanceof Error ? error : new Error("Erro desconhecido");
+
+      console.error(resolvedError);
+      console.table({ url: VOYA_API_URL, error: resolvedError.name });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 2).toString(),
+          role: "assistant",
+          content: `ERRO DE CONEXÃO: ${resolvedError.message}. Verifique se o domínio deno.net está bloqueado no seu firewall.`,
+        },
+      ]);
     } finally {
       setThinking(false);
     }
