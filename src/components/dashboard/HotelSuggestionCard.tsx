@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ExternalLink, MapPin, Sparkles, Wifi, Shield, Camera } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -125,7 +126,7 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
       {/* Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg">
+        <DialogContent className="bg-background border-border/50 max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground text-lg">{hotel.name}</DialogTitle>
             {hotel.location && (
@@ -136,7 +137,7 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
             )}
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Image */}
             <div className="rounded-md overflow-hidden">
               <AspectRatio ratio={16 / 9}>
@@ -151,48 +152,65 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
               </AspectRatio>
             </div>
 
-            {/* Price + Badge */}
-            <div className="flex items-center justify-between">
-              <span className="text-xl font-bold text-primary">{hotel.price}</span>
+            {/* Resumo de Custos */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Resumo de Custos</p>
+                <span className="text-2xl font-bold text-primary">{hotel.price}</span>
+              </div>
               <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">
                 {hotel.badge}
               </Badge>
             </div>
 
-            {/* Description */}
-            {hotel.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{hotel.description}</p>
-            )}
+            <Separator className="bg-border/40" />
 
-            {/* Info icons row */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
-                <Wifi className="w-5 h-5 text-primary" />
-                <span className="text-[10px] text-muted-foreground text-center">Wi-Fi de Alta Velocidade</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
-                <Camera className="w-5 h-5 text-primary" />
-                <span className="text-[10px] text-muted-foreground text-center">Workspace p/ Fotógrafos</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
-                <Shield className="w-5 h-5 text-primary" />
-                <span className="text-[10px] text-muted-foreground text-center">Cofre p/ Equipamentos</span>
+            {/* Destaques */}
+            <div className="space-y-3">
+              <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase">Destaques</h5>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
+                  <Wifi className="w-5 h-5 text-primary" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Wi-Fi de Alta Velocidade</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Cofre p/ Equipamentos</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 rounded-md border border-border/40 bg-muted/20 p-3">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight">Localização Estratégica</span>
+                </div>
               </div>
             </div>
 
-            {/* All highlights */}
+            {/* Logística Fotográfica */}
             {hotel.highlights.length > 0 && (
-              <div className="space-y-2">
-                <h5 className="text-sm font-medium text-foreground">Destaques</h5>
-                <ul className="space-y-1.5">
-                  {hotel.highlights.map((h, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-2 h-1 w-1 rounded-full bg-primary shrink-0" />
-                      {h}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <>
+                <Separator className="bg-border/40" />
+                <div className="space-y-3">
+                  <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-primary" />
+                    Logística Fotográfica
+                  </h5>
+                  <ul className="space-y-2">
+                    {hotel.highlights.map((h, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Description */}
+            {hotel.description && (
+              <>
+                <Separator className="bg-border/40" />
+                <p className="text-sm text-muted-foreground/80 leading-relaxed">{hotel.description}</p>
+              </>
             )}
 
             {/* Maps button */}
