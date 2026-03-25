@@ -4,7 +4,7 @@ import ChatBubble from "@/components/dashboard/ChatBubble";
 import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
 import { toast } from "@/hooks/use-toast";
 
-const VOYA_API_URL = "https://neat-dove-89.deno.dev";
+const VOYA_API_URL = "https://neat-dove-89.rafaelmar2000.deno.net";
 
 interface Message {
   id: string;
