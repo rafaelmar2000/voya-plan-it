@@ -108,16 +108,17 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
             >
               Ver Detalhes
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-xs h-8 text-muted-foreground hover:text-primary"
-              onClick={handleOpenMaps}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center justify-center text-xs h-8 px-3 rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 mr-1" />
               Maps
               <ExternalLink className="w-3 h-3 ml-0.5" />
-            </Button>
+            </a>
           </div>
         </div>
       </div>
@@ -195,11 +196,17 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
             )}
 
             {/* Maps button */}
-            <Button className="w-full" onClick={handleOpenMaps}>
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
               <MapPin className="w-4 h-4 mr-2" />
               Abrir no Google Maps
               <ExternalLink className="w-3.5 h-3.5 ml-2" />
-            </Button>
+            </a>
           </div>
         </DialogContent>
       </Dialog>
