@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MapPin, Sparkles, Wifi, Shield, Camera, Clock, SunMedium, Images } from "lucide-react";
+import { ExternalLink, MapPin, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,40 +39,6 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
   const fallback = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? ' ' + hotel.location : ''))}`;
   const { extendedDetails } = hotel;
-  const highlightCards = [
-    extendedDetails.internetSpeed
-      ? {
-          icon: Wifi,
-          label: "Velocidade de Internet",
-          value: extendedDetails.internetSpeed,
-        }
-      : null,
-    extendedDetails.equipmentSecurity
-      ? {
-          icon: Shield,
-          label: "Segurança de Equipamento",
-          value: extendedDetails.equipmentSecurity,
-        }
-      : null,
-    hotel.location
-      ? {
-          icon: MapPin,
-          label: "Localização",
-          value: hotel.location,
-        }
-      : null,
-  ].filter((item): item is { icon: typeof Wifi; label: string; value: string } => item !== null);
-  const logisticsItems = Array.from(new Set([...(extendedDetails.logistics ?? []), ...extendedDetails.schedule].filter(Boolean)));
-  const logisticsTitle = hotel.kind === "flight"
-    ? "Logística do Voo"
-    : hotel.kind === "attraction"
-      ? "Planejamento da Visita"
-      : "Logística Fotográfica";
-  const photographyTitle = hotel.kind === "flight"
-    ? "Observações Operacionais"
-    : hotel.kind === "attraction"
-      ? "Dicas de Fotografia"
-      : "Dicas de Fotografia";
 
   return (
     <>
@@ -158,20 +124,20 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
       {/* Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0">
-          <ScrollArea className="h-[70vh]">
-            <div className="space-y-5 px-6 pb-6">
-              <DialogHeader className="px-0 pt-6 pb-2 text-left">
-                <DialogTitle className="text-foreground text-lg">{hotel.name}</DialogTitle>
-                {hotel.location && (
-                  <DialogDescription className="flex items-center gap-1 text-muted-foreground">
-                    <MapPin className="w-3.5 h-3.5" />
-                    {hotel.location}
-                  </DialogDescription>
-                )}
-              </DialogHeader>
+        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-0 text-left">
+            <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">{hotel.name}</DialogTitle>
+            {hotel.location && (
+              <DialogDescription className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                <MapPin className="w-3.5 h-3.5" />
+                {hotel.location}
+              </DialogDescription>
+            )}
+          </DialogHeader>
 
-              <div className="rounded-md overflow-hidden">
+          <ScrollArea className="h-[65vh]">
+            <div className="space-y-6 px-6 pb-6 pt-4">
+              <div className="rounded-lg overflow-hidden">
                 <AspectRatio ratio={16 / 9}>
                   <img
                     src={primaryImage}
@@ -184,10 +150,10 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
                 </AspectRatio>
               </div>
 
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-4">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Resumo de Custos</p>
-                  <span className="text-2xl font-bold text-primary">{hotel.price}</span>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">Preço estimado</p>
+                  <span className="text-3xl font-bold text-primary tracking-tight">{hotel.price}</span>
                 </div>
                 <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">
                   {hotel.badge}
@@ -196,88 +162,12 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
               <Separator className="bg-border/40" />
 
-              {highlightCards.length > 0 && (
-                <div className="space-y-3">
-                  <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase">Destaques</h5>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {highlightCards.map(({ icon: Icon, label, value }) => (
-                      <div key={label} className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-1.5">
-                        <Icon className="w-5 h-5 text-primary" />
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-                        <p className="text-sm text-foreground leading-snug">{value || "–"}</p>
-                      </div>
-                    ))}
-                  </div>
+              <div className="space-y-3">
+                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Análise do Voya</h5>
+                <div className="text-[15px] text-muted-foreground/90 leading-[1.85] whitespace-pre-line">
+                  {extendedDetails.raw || hotel.description}
                 </div>
-              )}
-
-              {extendedDetails.workspaceDetails && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
-                      <Images className="w-4 h-4 text-primary" />
-                      Ambiente de Edição
-                    </h5>
-                    <p className="text-sm text-muted-foreground/80 leading-relaxed">{extendedDetails.workspaceDetails}</p>
-                  </div>
-                </>
-              )}
-
-              {extendedDetails.photographyTips.length > 0 && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="space-y-3">
-                    <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-primary" />
-                      {photographyTitle}
-                    </h5>
-                    <ul className="space-y-2">
-                      {extendedDetails.photographyTips.map((tip, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              )}
-
-              {(logisticsItems.length > 0 || extendedDetails.lightingTips.length > 0) && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {logisticsItems.length > 0 && (
-                      <div className="space-y-3 rounded-md border border-border/40 bg-muted/20 p-4">
-                        <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          {logisticsTitle}
-                        </h5>
-                        <ul className="space-y-2">
-                          {logisticsItems.map((item, i) => (
-                            <li key={i} className="text-sm text-muted-foreground leading-relaxed">{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {extendedDetails.lightingTips.length > 0 && (
-                      <div className="space-y-3 rounded-md border border-border/40 bg-muted/20 p-4">
-                        <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
-                          <SunMedium className="w-4 h-4 text-primary" />
-                          Luz Ideal
-                        </h5>
-                        <ul className="space-y-2">
-                          {extendedDetails.lightingTips.map((item, i) => (
-                            <li key={i} className="text-sm text-muted-foreground leading-relaxed">{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+              </div>
 
               <a
                 href={mapsUrl}
