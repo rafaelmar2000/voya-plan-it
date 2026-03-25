@@ -14,11 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
 
-function getHotelImage(hotelName: string): string {
-  const query = encodeURIComponent(hotelName + " hotel");
-  return `https://source.unsplash.com/600x340/?${query}`;
-}
-
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80",
   "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=340&fit=crop&q=80",
@@ -35,8 +30,8 @@ interface HotelSuggestionCardProps {
 
 const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const primaryImage = getHotelImage(hotel.name);
   const fallback = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+  const primaryImage = hotel.imageUrl || fallback;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? ' ' + hotel.location : ''))}`;
   const { extendedDetails } = hotel;
 
