@@ -1,110 +1,74 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ChatBubble from "@/components/dashboard/ChatBubble";
 import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
-import DashboardHotelCard from "@/components/dashboard/DashboardHotelCard";
-import DashboardFlightCard from "@/components/dashboard/DashboardFlightCard";
+import { toast } from "@/hooks/use-toast";
+
+const VOYA_API_URL = "https://neat-dove-89.deno.dev";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  cards?: React.ReactNode;
+  hasFunctionCall?: boolean;
 }
 
-const MOCK_MESSAGES: Message[] = [
+const INITIAL_MESSAGES: Message[] = [
   {
     id: "1",
     role: "assistant",
-    content: "Bem-vindo de volta ao Voya. Sem rodeios — para onde estamos indo desta vez?",
-  },
-  {
-    id: "2",
-    role: "user",
-    content: "Quero ir para Lisboa em setembro, saindo de São Paulo. Viagem de 7 dias.",
-  },
-  {
-    id: "3",
-    role: "assistant",
-    content: "Setembro em Lisboa: 25°C em média, precipitação mínima. Janela perfeita. Localizei 2 voos diretos e 1 com escala. O mais eficiente sai às 22h15 — você dorme no trajeto e chega pronto para o check-in.",
-    cards: (
-      <div className="space-y-3">
-        <DashboardFlightCard
-          airline="LATAM"
-          departure="GRU"
-          arrival="LIS"
-          departureTime="22:15"
-          arrivalTime="10:30"
-          duration="9h 15min"
-          price="R$ 3.450"
-          stops="Direto"
-        />
-        <DashboardFlightCard
-          airline="TAP Portugal"
-          departure="GRU"
-          arrival="LIS"
-          departureTime="23:50"
-          arrivalTime="12:05"
-          duration="9h 15min"
-          price="R$ 2.980"
-          stops="Direto"
-        />
-      </div>
-    ),
-  },
-  {
-    id: "4",
-    role: "assistant",
-    content: "E aqui estão 2 hotéis que curei para o seu perfil. Ambos em bairros com personalidade — longe de zonas turísticas genéricas.",
-    cards: (
-      <div className="space-y-3">
-        <DashboardHotelCard
-          name="Memmo Alfama"
-          location="Alfama, Lisboa"
-          rating={4.8}
-          pricePerNight="R$ 1.250"
-          imageUrl="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80"
-          amenities={["wifi", "spa", "terraço"]}
-        />
-        <DashboardHotelCard
-          name="The Lumiares"
-          location="Bairro Alto, Lisboa"
-          rating={4.7}
-          pricePerNight="R$ 1.680"
-          imageUrl="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&q=80"
-          amenities={["wifi", "piscina", "bar"]}
-        />
-      </div>
-    ),
+    content: "Bem-vindo ao Voya. Sem rodeios — para onde estamos indo desta vez?",
   },
 ];
 
 const Dashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeRoteiroId, setActiveRoteiroId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [thinking, setThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, thinking]);
 
-  const handleSend = (text: string) => {
+  const handleSend = useCallback(async (text: string) => {
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setThinking(true);
 
-    setTimeout(() => {
+    const apiMessages = updatedMessages.map(({ role, content }) => ({ role, content }));
+
+    try {
+      const res = await fetch(VOYA_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: apiMessages }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
       const reply: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Entendido. Deixe-me cruzar as opções com o seu orçamento. Qual faixa de valor você tem em mente para voo + hospedagem?",
+        content: data.content || "Sem resposta.",
+        hasFunctionCall: !!data.function_call,
       };
+
       setMessages((prev) => [...prev, reply]);
+    } catch {
+      toast({
+        title: "Conexão perdida",
+        description: "Não foi possível conectar ao Voya. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
       setThinking(false);
-    }, 1500);
-  };
+    }
+  }, [messages]);
 
   const handleNewRoteiro = () => {
     setActiveRoteiroId(null);
