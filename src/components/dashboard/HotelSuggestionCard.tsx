@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ExternalLink, MapPin, Sparkles, Wifi, Shield, Camera } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
