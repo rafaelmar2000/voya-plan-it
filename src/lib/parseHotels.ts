@@ -20,6 +20,7 @@ export interface ParsedHotel {
   badge: string;
   kind: ParsedSuggestionKind;
   extendedDetails: ParsedExtendedDetails;
+  imageUrl?: string;
 }
 
 
