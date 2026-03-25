@@ -4,7 +4,8 @@ export interface ParsedExtendedDetails {
   raw: string;
   internetSpeed?: string;
   equipmentSecurity?: string;
-  workspacePhotos?: string;
+  workspaceDetails?: string;
+  logistics?: string[];
   photographyTips: string[];
   schedule: string[];
   lightingTips: string[];
@@ -21,7 +22,7 @@ export interface ParsedHotel {
   extendedDetails: ParsedExtendedDetails;
 }
 
-const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "DETALHES_EXTENDIDOS"] as const;
+const TAGGED_FIELDS = ["NOME", "PRECO", "RESUMO", "DETALHES_EXTENDIDOS", "DETALHES_TECNICOS"] as const;
 
 function normalizeText(value: string): string {
   return value
@@ -55,6 +56,10 @@ function extractLabeledValue(line: string): string {
   return normalizeText(value);
 }
 
+function stripLeadingLabel(line: string): string {
+  return normalizeText(line.replace(/^[A-ZÇ_ ]+\s*:\s*/i, ""));
+}
+
 function extractLocation(...sources: string[]): string {
   const combined = sources.filter(Boolean).join("\n");
   const match = combined.match(
@@ -77,6 +82,7 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
     photographyTips: [],
     schedule: [],
     lightingTips: [],
+    logistics: [],
   };
 
   const fallbackBullets: string[] = [];
@@ -91,6 +97,30 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
     const line = normalizeText(originalLine);
     const bullet = cleanBullet(originalLine);
 
+    if (/^wifi\s*:/i.test(line)) {
+      details.internetSpeed = stripLeadingLabel(line);
+      activeSection = null;
+      continue;
+    }
+
+    if (/^seguran[çc]a\s*:/i.test(line)) {
+      details.equipmentSecurity = stripLeadingLabel(line);
+      activeSection = null;
+      continue;
+    }
+
+    if (/^workspace\s*:/i.test(line)) {
+      details.workspaceDetails = stripLeadingLabel(line);
+      activeSection = null;
+      continue;
+    }
+
+    if (/^log[ií]stica\s*:/i.test(line)) {
+      details.logistics?.push(stripLeadingLabel(line));
+      activeSection = "schedule";
+      continue;
+    }
+
     if (/^(?:velocidade\s+de\s+internet|wi-?fi|internet)\s*:/i.test(line)) {
       details.internetSpeed = extractLabeledValue(line);
       activeSection = null;
@@ -104,7 +134,7 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
     }
 
     if (/^(?:fotos?\s+do\s+workspace|workspace|coworking)\s*:/i.test(line)) {
-      details.workspacePhotos = extractLabeledValue(line);
+      details.workspaceDetails = extractLabeledValue(line);
       activeSection = null;
       continue;
     }
@@ -156,9 +186,15 @@ function parseExtendedDetails(rawDetails: string): ParsedExtendedDetails {
     if (securityMatch) details.equipmentSecurity = normalizeText(securityMatch[1]);
   }
 
+  if (!details.workspaceDetails) {
+    const workspaceMatch = rawDetails.match(/(?:workspace|coworking|edi[çc][ãa]o|lightroom)\s*:?\s*([^\n]+)/i);
+    if (workspaceMatch) details.workspaceDetails = normalizeText(workspaceMatch[1]);
+  }
+
   details.photographyTips = dedupe(details.photographyTips.length > 0 ? details.photographyTips : fallbackBullets.slice(0, 4));
-  details.schedule = dedupe(details.schedule);
+  details.schedule = dedupe([...(details.logistics || []), ...details.schedule]);
   details.lightingTips = dedupe(details.lightingTips);
+  details.logistics = dedupe(details.logistics || []);
 
   return details;
 }
@@ -188,6 +224,8 @@ function buildHighlights(details: ParsedExtendedDetails): string[] {
   return dedupe([
     details.internetSpeed ? `Internet: ${details.internetSpeed}` : "",
     details.equipmentSecurity ? `Segurança: ${details.equipmentSecurity}` : "",
+    details.workspaceDetails ? `Ambiente de edição: ${details.workspaceDetails}` : "",
+    ...(details.logistics || []).map((item) => `Logística: ${item}`),
     ...details.photographyTips,
     ...details.schedule,
     ...details.lightingTips,
@@ -206,7 +244,7 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
       const name = extractTaggedValue(block, "NOME");
       const price = extractTaggedValue(block, "PRECO") || "Consultar";
       const summary = extractTaggedValue(block, "RESUMO");
-      const rawDetails = extractTaggedValue(block, "DETALHES_EXTENDIDOS");
+      const rawDetails = extractTaggedValue(block, "DETALHES_TECNICOS") || extractTaggedValue(block, "DETALHES_EXTENDIDOS");
 
       if (!name || !summary || !rawDetails) return null;
 
@@ -270,7 +308,7 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
  * Extracts structured Voya suggestions from tagged output and falls back to the legacy parser.
  */
 export function parseHotelsFromText(text: string): { introText: string; hotels: ParsedHotel[] } {
-  if (/\[NOME\]/i.test(text) && /\[DETALHES_EXTENDIDOS\]/i.test(text)) {
+  if (/\[NOME\]/i.test(text) && (/\[DETALHES_EXTENDIDOS\]/i.test(text) || /\[DETALHES_TECNICOS\]/i.test(text))) {
     return parseTaggedSuggestions(text);
   }
 

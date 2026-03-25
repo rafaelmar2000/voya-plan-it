@@ -199,15 +199,15 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
                 </div>
               </div>
 
-              {extendedDetails.workspacePhotos && (
+              {extendedDetails.workspaceDetails && (
                 <>
                   <Separator className="bg-border/40" />
                   <div className="space-y-2">
                     <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
                       <Images className="w-4 h-4 text-primary" />
-                      Workspace
+                      Ambiente de Edição
                     </h5>
-                    <p className="text-sm text-muted-foreground/80 leading-relaxed">{extendedDetails.workspacePhotos}</p>
+                    <p className="text-sm text-muted-foreground/80 leading-relaxed">{extendedDetails.workspaceDetails}</p>
                   </div>
                 </>
               )}
