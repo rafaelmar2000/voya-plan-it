@@ -35,7 +35,7 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const primaryImage = getHotelImage(hotel.name);
   const fallback = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
-  const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(hotel.name)}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? ' ' + hotel.location : ''))}`;
 
   const handleOpenMaps = () => {
     window.open(mapsUrl, "_blank");
