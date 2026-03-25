@@ -39,6 +39,30 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
   const fallback = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? ' ' + hotel.location : ''))}`;
   const { extendedDetails } = hotel;
+  const highlightCards = [
+    extendedDetails.internetSpeed
+      ? {
+          icon: Wifi,
+          label: "Velocidade de Internet",
+          value: extendedDetails.internetSpeed,
+        }
+      : null,
+    extendedDetails.equipmentSecurity
+      ? {
+          icon: Shield,
+          label: "Segurança de Equipamento",
+          value: extendedDetails.equipmentSecurity,
+        }
+      : null,
+    hotel.location
+      ? {
+          icon: MapPin,
+          label: "Localização",
+          value: hotel.location,
+        }
+      : null,
+  ].filter((item): item is { icon: typeof Wifi; label: string; value: string } => item !== null);
+  const logisticsItems = Array.from(new Set([...(extendedDetails.logistics ?? []), ...extendedDetails.schedule].filter(Boolean)));
   const logisticsTitle = hotel.kind === "flight"
     ? "Logística do Voo"
     : hotel.kind === "attraction"
@@ -49,10 +73,6 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
     : hotel.kind === "attraction"
       ? "Dicas de Fotografia"
       : "Dicas de Fotografia";
-
-  const handleOpenMaps = () => {
-    window.open(mapsUrl, "_blank");
-  };
 
   return (
     <>
@@ -138,21 +158,19 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
       {/* Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg max-h-[85vh] overflow-y-auto p-0">
-          <DialogHeader>
-            <div className="px-6 pt-6 pb-2">
-              <DialogTitle className="text-foreground text-lg">{hotel.name}</DialogTitle>
-              {hotel.location && (
-                <DialogDescription className="flex items-center gap-1 text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {hotel.location}
-                </DialogDescription>
-              )}
-            </div>
-          </DialogHeader>
-
-          <ScrollArea className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0">
+          <ScrollArea className="h-[70vh]">
             <div className="space-y-5 px-6 pb-6">
+              <DialogHeader className="px-0 pt-6 pb-2 text-left">
+                <DialogTitle className="text-foreground text-lg">{hotel.name}</DialogTitle>
+                {hotel.location && (
+                  <DialogDescription className="flex items-center gap-1 text-muted-foreground">
+                    <MapPin className="w-3.5 h-3.5" />
+                    {hotel.location}
+                  </DialogDescription>
+                )}
+              </DialogHeader>
+
               <div className="rounded-md overflow-hidden">
                 <AspectRatio ratio={16 / 9}>
                   <img
@@ -178,26 +196,20 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
               <Separator className="bg-border/40" />
 
-              <div className="space-y-3">
-                <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase">Destaques</h5>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-1.5">
-                    <Wifi className="w-5 h-5 text-primary" />
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Velocidade de Internet</p>
-                    <p className="text-sm text-foreground leading-snug">{extendedDetails.internetSpeed || "Não informado pelo Voya"}</p>
-                  </div>
-                  <div className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-1.5">
-                    <Shield className="w-5 h-5 text-primary" />
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Segurança de Equipamento</p>
-                    <p className="text-sm text-foreground leading-snug">{extendedDetails.equipmentSecurity || "Não informado pelo Voya"}</p>
-                  </div>
-                  <div className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-1.5">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Localização</p>
-                    <p className="text-sm text-foreground leading-snug">{hotel.location || "Consultar localização"}</p>
+              {highlightCards.length > 0 && (
+                <div className="space-y-3">
+                  <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase">Destaques</h5>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {highlightCards.map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="rounded-md border border-border/40 bg-muted/20 p-3 space-y-1.5">
+                        <Icon className="w-5 h-5 text-primary" />
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+                        <p className="text-sm text-foreground leading-snug">{value || "–"}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
 
               {extendedDetails.workspaceDetails && (
                 <>
@@ -232,18 +244,18 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
                 </>
               )}
 
-              {(extendedDetails.schedule.length > 0 || extendedDetails.lightingTips.length > 0) && (
+              {(logisticsItems.length > 0 || extendedDetails.lightingTips.length > 0) && (
                 <>
                   <Separator className="bg-border/40" />
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {extendedDetails.schedule.length > 0 && (
+                    {logisticsItems.length > 0 && (
                       <div className="space-y-3 rounded-md border border-border/40 bg-muted/20 p-4">
                         <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase flex items-center gap-2">
                           <Clock className="w-4 h-4 text-primary" />
                           {logisticsTitle}
                         </h5>
                         <ul className="space-y-2">
-                          {extendedDetails.schedule.map((item, i) => (
+                          {logisticsItems.map((item, i) => (
                             <li key={i} className="text-sm text-muted-foreground leading-relaxed">{item}</li>
                           ))}
                         </ul>
@@ -267,20 +279,10 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
                 </>
               )}
 
-              {hotel.description && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-semibold text-foreground tracking-wide uppercase">Resumo</h5>
-                    <p className="text-sm text-muted-foreground/80 leading-relaxed">{hotel.description}</p>
-                  </div>
-                </>
-              )}
-
               <a
                 href={mapsUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
