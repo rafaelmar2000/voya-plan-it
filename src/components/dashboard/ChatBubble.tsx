@@ -41,7 +41,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
                 : "text-foreground/90 text-sm leading-[1.8] whitespace-pre-line [&>*]:mb-2"
             }
           >
-            {introText.replace(/\[\/?[A-Z]+\]/g, "").trim()}
+            {renderMarkdownBold(introText.replace(/\[\/?[A-Z]+\]/g, "").trim())}
           </div>
         )}
 
