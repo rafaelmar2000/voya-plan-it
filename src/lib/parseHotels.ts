@@ -33,8 +33,10 @@ function extractTaggedValue(block: string, tag: (typeof TAGGED_FIELDS)[number]):
   return inlineMatch ? normalizeText(inlineMatch[1]) : "";
 }
 
-function buildImageUrl(name: string): string {
-  const query = encodeURIComponent(`${name} hotel`);
+function buildImageUrl(name: string, location: string): string {
+  // Use location/city for more relevant photos; fall back to name
+  const base = location || name;
+  const query = encodeURIComponent(`${base} city travel`);
   return `https://source.unsplash.com/featured/600x340/?${query}`;
 }
 
