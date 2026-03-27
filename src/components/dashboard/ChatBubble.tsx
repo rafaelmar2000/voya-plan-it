@@ -2,6 +2,16 @@ import { Loader2 } from "lucide-react";
 import { parseHotelsFromText } from "@/lib/parseHotels";
 import HotelSuggestionCard from "@/components/dashboard/HotelSuggestionCard";
 import FlightTicketCard from "@/components/dashboard/FlightTicketCard";
+import React from "react";
+
+function renderMarkdownBold(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    const bold = part.match(/^\*\*(.+)\*\*$/);
+    if (bold) return <strong key={i} className="font-semibold">{bold[1]}</strong>;
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+}
 
 interface ChatBubbleProps {
   role: "user" | "assistant";
@@ -31,7 +41,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
                 : "text-foreground/90 text-sm leading-[1.8] whitespace-pre-line [&>*]:mb-2"
             }
           >
-            {introText.replace(/\[\/?[A-Z]+\]/g, "").trim()}
+            {renderMarkdownBold(introText.replace(/\[\/?[A-Z]+\]/g, "").trim())}
           </div>
         )}
 
