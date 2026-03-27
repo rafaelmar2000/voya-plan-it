@@ -16,7 +16,7 @@ import {
 import type { ParsedHotel } from "@/lib/parseHotels";
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80";
+  "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
 
 interface HotelSuggestionCardProps {
   hotel: ParsedHotel;
@@ -26,7 +26,7 @@ interface HotelSuggestionCardProps {
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const primaryImage = hotel.photoUrl || hotel.imageUrl || FALLBACK_IMAGE;
+  const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
 
   return (
