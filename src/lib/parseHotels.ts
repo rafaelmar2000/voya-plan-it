@@ -79,13 +79,37 @@ function extractHighlights(summary: string): string[] {
 }
 
 function parseTaggedSuggestions(text: string): { introText: string; hotels: ParsedHotel[] } {
-  const introText = normalizeText(text.split(/\[NOME\]/i)[0] || "");
-  const blocks = text
-    .split(/(?=\[NOME\])/i)
-    .map((b) => b.trim())
-    .filter((b) => b.startsWith("[NOME]"));
+  // Split on [CATEGORIA] or [NOME] — whichever starts a new suggestion block
+  const blockDelimiter = /(?=\[(?:CATEGORIA|NOME)\])/i;
+  const rawParts = text.split(blockDelimiter).map((b) => b.trim());
 
-  const hotels = blocks
+  // Intro = first chunk that does NOT start with a tag
+  const introParts: string[] = [];
+  const blockParts: string[] = [];
+  for (const part of rawParts) {
+    if (/^\[(?:CATEGORIA|NOME)\]/i.test(part)) {
+      blockParts.push(part);
+    } else if (blockParts.length === 0) {
+      introParts.push(part);
+    }
+  }
+  const introText = normalizeText(introParts.join("\n"));
+
+  // Merge consecutive CATEGORIA-only chunks with the next NOME chunk
+  const mergedBlocks: string[] = [];
+  for (let i = 0; i < blockParts.length; i++) {
+    if (/^\[CATEGORIA\]/i.test(blockParts[i]) && !/\[NOME\]/i.test(blockParts[i])) {
+      // This chunk has CATEGORIA but not NOME — merge with the next
+      if (i + 1 < blockParts.length) {
+        blockParts[i + 1] = blockParts[i] + "\n" + blockParts[i + 1];
+      }
+    } else {
+      mergedBlocks.push(blockParts[i]);
+    }
+  }
+
+  const hotels = mergedBlocks
+    .filter((b) => /\[NOME\]/i.test(b))
     .map((block) => {
       const name = extractTaggedValue(block, "NOME");
       const price = extractTaggedValue(block, "PRECO") || "Consultar";
@@ -151,8 +175,11 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
 }
 
 export function parseHotelsFromText(text: string): { introText: string; hotels: ParsedHotel[] } {
-  if (/\[NOME\]/i.test(text)) {
-    return parseTaggedSuggestions(text);
+  if (/\[(?:NOME|CATEGORIA)\]/i.test(text)) {
+    const result = parseTaggedSuggestions(text);
+    // Strip any leftover tags from intro so raw markup never shows
+    result.introText = result.introText.replace(/\[\/?\w+\]/g, "").trim();
+    return result;
   }
   return parseLegacySuggestions(text);
 }
