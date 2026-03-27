@@ -123,16 +123,17 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
 
       const kind = detectKind(categoria, name, summary);
 
+      const loc = extractLocation(summary, detailsText);
       return {
         name,
         price,
-        location: extractLocation(summary, detailsText),
+        location: loc,
         description: summary,
         highlights: extractHighlights(summary),
         badge: buildBadge(summary, kind),
         kind,
         detailsText: detailsText || summary,
-        imageUrl: buildImageUrl(name),
+        imageUrl: buildImageUrl(name, loc),
       } as ParsedHotel;
     })
     .filter((h): h is ParsedHotel => h !== null);
