@@ -33,8 +33,10 @@ function extractTaggedValue(block: string, tag: (typeof TAGGED_FIELDS)[number]):
   return inlineMatch ? normalizeText(inlineMatch[1]) : "";
 }
 
-function buildImageUrl(name: string): string {
-  const query = encodeURIComponent(`${name} hotel`);
+function buildImageUrl(name: string, location: string): string {
+  // Use location/city for more relevant photos; fall back to name
+  const base = location || name;
+  const query = encodeURIComponent(`${base} city travel`);
   return `https://source.unsplash.com/featured/600x340/?${query}`;
 }
 
@@ -121,16 +123,17 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
 
       const kind = detectKind(categoria, name, summary);
 
+      const loc = extractLocation(summary, detailsText);
       return {
         name,
         price,
-        location: extractLocation(summary, detailsText),
+        location: loc,
         description: summary,
         highlights: extractHighlights(summary),
         badge: buildBadge(summary, kind),
         kind,
         detailsText: detailsText || summary,
-        imageUrl: buildImageUrl(name),
+        imageUrl: buildImageUrl(name, loc),
       } as ParsedHotel;
     })
     .filter((h): h is ParsedHotel => h !== null);
@@ -158,16 +161,17 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
     const descMatch = block.match(/[\-:]\s*\*{0,2}([^*\n•\-]{15,150})/);
     const description = descMatch ? normalizeText(descMatch[1].replace(/\*+/g, "")) : "";
 
+    const loc = extractLocation(block, "");
     hotels.push({
       name,
       price,
-      location: extractLocation(block, ""),
+      location: loc,
       description,
       highlights: extractHighlights(block),
       badge: buildBadge(description, detectKind("", name, description)),
       kind: detectKind("", name, description),
       detailsText: block,
-      imageUrl: buildImageUrl(name),
+      imageUrl: buildImageUrl(name, loc),
     });
   }
 
