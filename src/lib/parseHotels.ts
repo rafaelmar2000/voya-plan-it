@@ -163,14 +163,17 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
 
     hotels.push({
       name,
+      const loc = extractLocation(block, "");
+    hotels.push({
+      name,
       price,
-      location: extractLocation(block, ""),
+      location: loc,
       description,
       highlights: extractHighlights(block),
       badge: buildBadge(description, detectKind("", name, description)),
       kind: detectKind("", name, description),
       detailsText: block,
-      imageUrl: buildImageUrl(name),
+      imageUrl: buildImageUrl(name, loc),
     });
   }
 
