@@ -21,7 +21,7 @@ function normalizeText(value: string): string {
     .replace(/[\t ]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
-    .replace(/^[:\s]+/, ""); // Remove leading ':' and whitespace
+    .replace(/^:(?!\/)\s*/, ""); // Remove leading ':' only if NOT part of a URL scheme (e.g. https://)
 }
 
 function cleanDisplayText(value: string): string {
