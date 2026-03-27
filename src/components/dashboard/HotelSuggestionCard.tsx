@@ -14,31 +14,23 @@ import {
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
 
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=600&h=340&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&h=340&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1455587734955-081b22074882?w=600&h=340&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=340&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=600&h=340&fit=crop&q=80",
-];
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=340&fit=crop&q=80";
 
 interface HotelSuggestionCardProps {
   hotel: ParsedHotel;
   index: number;
 }
 
-const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
+const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const fallback = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
-  const primaryImage = hotel.imageUrl || fallback;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? ' ' + hotel.location : ''))}`;
-  const { extendedDetails } = hotel;
+  const primaryImage = hotel.imageUrl || FALLBACK_IMAGE;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
 
   return (
     <>
+      {/* Card */}
       <div className="group relative overflow-hidden rounded-lg border border-border/50 bg-card/30 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_40px_hsl(var(--primary)/0.10)]">
-        {/* Image */}
         <div className="relative overflow-hidden">
           <AspectRatio ratio={16 / 9}>
             <img
@@ -47,7 +39,7 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = fallback;
+                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
               }}
             />
           </AspectRatio>
@@ -63,7 +55,6 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-4 space-y-2.5">
           <div>
             <h4 className="font-semibold text-foreground text-sm leading-tight">{hotel.name}</h4>
@@ -81,18 +72,6 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
             </p>
           )}
 
-          {hotel.highlights.length > 0 && (
-            <ul className="space-y-1">
-              {hotel.highlights.slice(0, 3).map((h, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <span className="mt-1.5 h-1 w-1 rounded-full bg-primary shrink-0" />
-                  <span className="line-clamp-1">{h}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* Actions */}
           <div className="flex gap-2 pt-1">
             <Button
               size="sm"
@@ -117,11 +96,13 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
         </div>
       </div>
 
-      {/* Details Dialog */}
+      {/* Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-0 text-left">
-            <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">{hotel.name}</DialogTitle>
+            <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">
+              {hotel.name}
+            </DialogTitle>
             {hotel.location && (
               <DialogDescription className="flex items-center gap-1.5 text-muted-foreground text-sm">
                 <MapPin className="w-3.5 h-3.5" />
@@ -130,8 +111,9 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
             )}
           </DialogHeader>
 
-          <ScrollArea className="h-[65vh]">
+          <ScrollArea className="h-[70vh]">
             <div className="space-y-6 px-6 pb-6 pt-4">
+              {/* Image */}
               <div className="rounded-lg overflow-hidden">
                 <AspectRatio ratio={16 / 9}>
                   <img
@@ -139,16 +121,21 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
                     alt={hotel.name}
                     className="h-full w-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = fallback;
+                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
                     }}
                   />
                 </AspectRatio>
               </div>
 
+              {/* Price */}
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">Preço estimado</p>
-                  <span className="text-3xl font-bold text-primary tracking-tight">{hotel.price}</span>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">
+                    Preço estimado
+                  </p>
+                  <span className="text-3xl font-bold text-primary tracking-tight">
+                    {hotel.price}
+                  </span>
                 </div>
                 <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">
                   {hotel.badge}
@@ -157,18 +144,21 @@ const HotelSuggestionCard = ({ hotel, index }: HotelSuggestionCardProps) => {
 
               <Separator className="bg-border/40" />
 
+              {/* Análise do Voya */}
               <div className="space-y-3">
-                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Análise do Voya</h5>
+                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">
+                  Análise do Voya
+                </h5>
                 <div className="text-[15px] text-muted-foreground/90 leading-[1.85] whitespace-pre-line">
-                  {extendedDetails.raw || hotel.description}
+                  {hotel.detailsText}
                 </div>
               </div>
 
+              {/* Maps button */}
               <a
                 href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 <MapPin className="w-4 h-4 mr-2" />
