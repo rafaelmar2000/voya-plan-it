@@ -161,9 +161,7 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
     const descMatch = block.match(/[\-:]\s*\*{0,2}([^*\n•\-]{15,150})/);
     const description = descMatch ? normalizeText(descMatch[1].replace(/\*+/g, "")) : "";
 
-    hotels.push({
-      name,
-      const loc = extractLocation(block, "");
+    const loc = extractLocation(block, "");
     hotels.push({
       name,
       price,
