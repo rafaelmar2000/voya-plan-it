@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface HotelSuggestionCardProps {
 
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const primaryImage = hotel.photoUrl || hotel.imageUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
 
@@ -33,11 +35,13 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
       <div className="group relative overflow-hidden rounded-lg border border-border/50 bg-card/30 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_40px_hsl(var(--primary)/0.10)]">
         <div className="relative overflow-hidden">
           <AspectRatio ratio={16 / 9}>
+            {!imgLoaded && <Skeleton className="absolute inset-0 rounded-none" />}
             <img
               src={primaryImage}
               alt={hotel.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className={`h-full w-full object-cover transition-all duration-500 ${imgLoaded ? "opacity-100 group-hover:scale-105" : "opacity-0"}`}
               loading="lazy"
+              onLoad={() => setImgLoaded(true)}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
               }}
