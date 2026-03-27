@@ -177,7 +177,7 @@ const Dashboard = () => {
         setThinking(false);
       }
     },
-    [activeRoteiroId, messages, user]
+    [activeRoteiroId, user]
   );
 
   // ─── New roteiro ───
