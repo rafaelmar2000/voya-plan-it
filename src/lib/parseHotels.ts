@@ -175,8 +175,11 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
 }
 
 export function parseHotelsFromText(text: string): { introText: string; hotels: ParsedHotel[] } {
-  if (/\[NOME\]/i.test(text)) {
-    return parseTaggedSuggestions(text);
+  if (/\[(?:NOME|CATEGORIA)\]/i.test(text)) {
+    const result = parseTaggedSuggestions(text);
+    // Strip any leftover tags from intro so raw markup never shows
+    result.introText = result.introText.replace(/\[\/?\w+\]/g, "").trim();
+    return result;
   }
   return parseLegacySuggestions(text);
 }
