@@ -185,6 +185,12 @@ const Dashboard = () => {
     setActiveRoteiroId(id);
   };
 
+  const handleDeleteRoteiro = (id: string) => {
+    if (activeRoteiroId === id) {
+      handleNewRoteiro();
+    }
+  };
+
   return (
     <div className="h-screen flex bg-background overflow-hidden">
       <DashboardSidebar
@@ -193,6 +199,7 @@ const Dashboard = () => {
         activeRoteiroId={activeRoteiroId}
         onSelectRoteiro={handleSelectRoteiro}
         onNewRoteiro={handleNewRoteiro}
+        onDeleteRoteiro={handleDeleteRoteiro}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
