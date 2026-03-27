@@ -10,15 +10,23 @@ export interface ParsedHotel {
   kind: ParsedSuggestionKind;
   detailsText: string;
   imageUrl: string;
+  photoUrl: string;
 }
 
-const TAGGED_FIELDS = ["CATEGORIA", "NOME", "PRECO", "RESUMO", "DETALHES"] as const;
+const TAGGED_FIELDS = ["CATEGORIA", "NOME", "PRECO", "RESUMO", "DETALHES", "FOTO", "FIM"] as const;
 
 function normalizeText(value: string): string {
   return value
     .replace(/\r/g, "")
     .replace(/[\t ]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .replace(/^[:\s]+/, ""); // Remove leading ':' and whitespace
+}
+
+function cleanDisplayText(value: string): string {
+  return value
+    .replace(/\[\/?(?:CATEGORIA|NOME|PRECO|RESUMO|DETALHES|FOTO|FIM)\]/gi, "")
     .trim();
 }
 
@@ -122,18 +130,20 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
       if (!name) return null;
 
       const kind = detectKind(categoria, name, summary);
+      const photoUrl = extractTaggedValue(block, "FOTO");
 
       const loc = extractLocation(summary, detailsText);
       return {
-        name,
-        price,
+        name: cleanDisplayText(name),
+        price: cleanDisplayText(price),
         location: loc,
-        description: summary,
+        description: cleanDisplayText(summary),
         highlights: extractHighlights(summary),
         badge: buildBadge(summary, kind),
         kind,
-        detailsText: detailsText || summary,
+        detailsText: cleanDisplayText(detailsText || summary),
         imageUrl: buildImageUrl(name, loc),
+        photoUrl,
       } as ParsedHotel;
     })
     .filter((h): h is ParsedHotel => h !== null);
@@ -172,6 +182,7 @@ function parseLegacySuggestions(text: string): { introText: string; hotels: Pars
       kind: detectKind("", name, description),
       detailsText: block,
       imageUrl: buildImageUrl(name, loc),
+      photoUrl: "",
     });
   }
 
@@ -182,7 +193,7 @@ export function parseHotelsFromText(text: string): { introText: string; hotels: 
   if (/\[(?:NOME|CATEGORIA)\]/i.test(text)) {
     const result = parseTaggedSuggestions(text);
     // Strip any leftover tags from intro so raw markup never shows
-    result.introText = result.introText.replace(/\[\/?\w+\]/g, "").trim();
+    result.introText = result.introText.replace(/\[\/?(?:\w+)\]/g, "").replace(/^[:\s]+/, "").trim();
     return result;
   }
   return parseLegacySuggestions(text);

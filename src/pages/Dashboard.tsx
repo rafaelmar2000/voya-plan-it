@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
@@ -191,6 +192,13 @@ const Dashboard = () => {
     }
   };
 
+  const handleClearCurrentChat = async () => {
+    if (!activeRoteiroId) return;
+    await supabase.from("mensagens_chat").delete().eq("roteiro_id", activeRoteiroId);
+    await supabase.from("roteiros").delete().eq("id", activeRoteiroId);
+    handleNewRoteiro();
+  };
+
   return (
     <div className="h-screen flex bg-background overflow-hidden">
       <DashboardSidebar
@@ -209,6 +217,16 @@ const Dashboard = () => {
             <div className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-xs text-muted-foreground tracking-wide">Voya online</span>
           </div>
+          {activeRoteiroId && (
+            <button
+              onClick={handleClearCurrentChat}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+              title="Limpar roteiro atual"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Limpar Roteiro</span>
+            </button>
+          )}
         </div>
 
         {/* Messages */}
