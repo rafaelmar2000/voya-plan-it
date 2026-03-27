@@ -121,16 +121,22 @@ const Dashboard = () => {
       // Persist user message
       await persistMessage(roteiroId, "user", text);
 
-      // Call API
-      const allMessages = [...messages, userMsg];
-      const apiMessages = allMessages.map(({ role, content }) => ({ role, content }));
+      // Build payload from current state snapshot (avoid stale closure)
+      let currentMessages: Message[] = [];
+      setMessages((prev) => { currentMessages = prev; return prev; });
+      const apiMessages = currentMessages.map(({ role, content }) => ({ role, content }));
+
+      const payload = JSON.stringify({ messages: apiMessages });
 
       try {
         const res = await fetch(VOYA_API_URL, {
           method: "POST",
           mode: "cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: apiMessages }),
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: payload,
         });
 
         if (!res.ok) {
@@ -138,7 +144,12 @@ const Dashboard = () => {
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
-        const data = await res.json();
+        const text = await res.text();
+        if (!text || text.trim().length === 0) {
+          throw new Error("Corpo vazio na resposta do servidor");
+        }
+
+        const data = JSON.parse(text);
         const replyContent = data.content || "Sem resposta.";
 
         const reply: Message = {
