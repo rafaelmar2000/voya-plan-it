@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { parseHotelsFromText } from "@/lib/parseHotels";
 import HotelSuggestionCard from "@/components/dashboard/HotelSuggestionCard";
+import FlightTicketCard from "@/components/dashboard/FlightTicketCard";
 
 interface ChatBubbleProps {
   role: "user" | "assistant";
@@ -12,17 +13,16 @@ interface ChatBubbleProps {
 const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProps) => {
   const isUser = role === "user";
 
-  // Parse hotels only for assistant messages
   const { introText, hotels } = !isUser
     ? parseHotelsFromText(content)
     : { introText: content, hotels: [] };
 
-  const hasHotels = hotels.length > 0;
+  const flights = hotels.filter((h) => h.kind === "flight");
+  const nonFlights = hotels.filter((h) => h.kind !== "flight");
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
       <div className={`${isUser ? "max-w-[85%] sm:max-w-[70%]" : "max-w-[95%] sm:max-w-[90%]"} ${isUser ? "" : "space-y-4"}`}>
-        {/* Text */}
         {introText && (
           <div
             className={
@@ -35,7 +35,6 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
           </div>
         )}
 
-        {/* Function call indicator */}
         {hasFunctionCall && (
           <div className="mt-3 flex items-center gap-3 bg-[hsl(var(--charcoal))] border border-foreground/10 px-4 py-3 rounded text-xs text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -43,10 +42,19 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
           </div>
         )}
 
-        {/* Hotel cards grid */}
-        {hasHotels && (
+        {/* Flight tickets */}
+        {flights.length > 0 && (
+          <div className="mt-4 grid grid-cols-1 gap-3">
+            {flights.map((f, i) => (
+              <FlightTicketCard key={`flight-${f.name}-${i}`} flight={f} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Hotel / attraction cards */}
+        {nonFlights.length > 0 && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {hotels.map((hotel, i) => (
+            {nonFlights.map((hotel, i) => (
               <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
             ))}
           </div>
