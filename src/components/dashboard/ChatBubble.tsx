@@ -28,10 +28,10 @@ const ChatBubble = ({ role, content, hasFunctionCall, children }: ChatBubbleProp
             className={
               isUser
                 ? "bg-charcoal text-foreground px-4 py-3 rounded-lg rounded-br-sm text-sm leading-relaxed"
-                : "text-foreground/90 text-sm leading-relaxed whitespace-pre-line"
+                : "text-foreground/90 text-sm leading-[1.8] whitespace-pre-line [&>*]:mb-2"
             }
           >
-            {introText}
+            {introText.replace(/\[\/?[A-Z]+\]/g, "").trim()}
           </div>
         )}
 
