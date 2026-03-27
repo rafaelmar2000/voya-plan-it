@@ -41,11 +41,9 @@ function extractTaggedValue(block: string, tag: (typeof TAGGED_FIELDS)[number]):
   return inlineMatch ? normalizeText(inlineMatch[1]) : "";
 }
 
-function buildImageUrl(name: string, location: string): string {
-  // Use location/city for more relevant photos; fall back to name
-  const base = location || name;
-  const query = encodeURIComponent(`${base} city travel`);
-  return `https://source.unsplash.com/featured/600x340/?${query}`;
+function buildImageUrl(_name: string, _location: string): string {
+  // No longer used — images come exclusively from [FOTO] tag
+  return "";
 }
 
 function detectKind(categoria: string, name: string, summary: string): ParsedSuggestionKind {
