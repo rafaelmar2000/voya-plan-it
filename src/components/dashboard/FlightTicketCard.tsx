@@ -42,7 +42,7 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
     <>
       <button
         onClick={() => setDetailsOpen(true)}
-        className="w-full group relative flex items-center gap-3 rounded-lg border border-border/40 bg-card/30 backdrop-blur-sm px-3 py-2.5 transition-all duration-200 hover:border-primary/40 hover:bg-surface-hover text-left"
+        className="w-full group flex items-center gap-3 rounded-md border border-border/20 bg-card/20 px-3 py-2 transition-colors duration-150 hover:bg-surface-hover text-left"
       >
         {/* Logo */}
         <div className="w-8 h-8 rounded-full overflow-hidden border border-border/30 bg-muted flex items-center justify-center shrink-0">
