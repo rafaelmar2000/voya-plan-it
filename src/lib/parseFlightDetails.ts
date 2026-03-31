@@ -61,18 +61,38 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
       ? "1 Conexão"
       : `${connectionCount} Conexões`;
 
-  // Class prices: "Econômica: R$ 3.200" or "Executiva: R$ 8.500"
+  // Class prices — multiple formats:
+  // 1) Tagged: PRECO_ECONOMICA: R$ 3.200 / PRECO_EXECUTIVA: R$ 8.500 / PRECO_PRIMEIRA: R$ 15.000
+  // 2) Inline: "Econômica: R$ 3.200" or "Executiva: R$ 8.500"
   const classPrices: FlightClassPrice[] = [];
+  const seenClasses = new Set<string>();
+
+  // Format 1: PRECO_ECONOMICA / PRECO_EXECUTIVA / PRECO_PRIMEIRA tags
+  const taggedMap: Record<string, string> = {
+    "PRECO_ECONOMICA": "Econômica",
+    "PRECO_EXECUTIVA": "Executiva",
+    "PRECO_PRIMEIRA": "Primeira Classe",
+  };
+  for (const [tag, label] of Object.entries(taggedMap)) {
+    const tagRegex = new RegExp(`${tag}\\s*:?\\s*((?:R\\$|US\\$|\\$|€)\\s?[\\d.,]+)`, "i");
+    const tagMatch = combined.match(tagRegex);
+    if (tagMatch) {
+      const price = tagMatch[1].trim();
+      classPrices.push({ className: label, price, priceNumeric: extractNumeric(price) });
+      seenClasses.add(label.toLowerCase());
+    }
+  }
+
+  // Format 2: inline "Econômica: R$ 3.200"
   const classPriceRegex = /(econ[oô]mica|executiva|premium|primeira\s*classe)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi;
   let cpMatch;
   while ((cpMatch = classPriceRegex.exec(combined)) !== null) {
-    const className = cpMatch[1].charAt(0).toUpperCase() + cpMatch[1].slice(1).toLowerCase();
+    let className = cpMatch[1].charAt(0).toUpperCase() + cpMatch[1].slice(1).toLowerCase();
+    className = className.replace("Economica", "Econômica");
+    if (seenClasses.has(className.toLowerCase())) continue; // avoid duplicates
     const price = cpMatch[2].trim();
-    classPrices.push({
-      className: className.replace("Econômica", "Econômica").replace("Economica", "Econômica"),
-      price,
-      priceNumeric: extractNumeric(price),
-    });
+    classPrices.push({ className, price, priceNumeric: extractNumeric(price) });
+    seenClasses.add(className.toLowerCase());
   }
 
   return {
