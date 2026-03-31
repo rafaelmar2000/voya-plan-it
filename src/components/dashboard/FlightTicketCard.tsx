@@ -27,10 +27,11 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const [selectedClass, setSelectedClass] = useState<string>("Econômica");
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
-  const meta = useMemo(
-    () => parseFlightMeta(flight.description, flight.detailsText),
-    [flight.description, flight.detailsText]
-  );
+  const meta = useMemo(() => {
+    const parsed = parseFlightMeta(flight.description, flight.detailsText);
+    console.log("[FlightTicketCard] Parsed meta for", flight.name, parsed);
+    return parsed;
+  }, [flight.description, flight.detailsText, flight.name]);
 
   const logo = flight.photoUrl;
   const flightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(flight.name + " " + flight.description)}`;
