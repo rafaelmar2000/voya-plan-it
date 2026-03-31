@@ -105,9 +105,31 @@ const Dashboard = () => {
     return data.id;
   };
 
+  // ─── Detect new-destination intent ───
+  const isNewDestinationIntent = (text: string): boolean => {
+    const patterns = [
+      /\b(?:quero|vamos|bora|partiu|vou)\s+(?:ir\s+)?(?:para|pra|a)\b/i,
+      /\b(?:nova\s+viagem|novo\s+destino|outro\s+destino|mudar\s+destino)\b/i,
+      /\b(?:planej(?:ar|e|a)\s+(?:uma\s+)?viagem)\b/i,
+      /\b(?:me\s+lev[ae])\s+(?:para|pra)\b/i,
+    ];
+    // Only trigger if we already have real conversation (beyond welcome)
+    const hasHistory = messagesRef.current.length > 2;
+    return hasHistory && patterns.some((p) => p.test(text));
+  };
+
   // ─── Send message ───
   const handleSend = useCallback(
     async (text: string) => {
+      // Amnesia: if user starts a new destination, reset everything
+      if (isNewDestinationIntent(text)) {
+        clearTrip();
+        setActiveRoteiroId(null);
+        setMessages([]);
+        // Small delay so state clears before we proceed
+        await new Promise((r) => setTimeout(r, 50));
+      }
+
       const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
       setMessages((prev) => [...prev, userMsg]);
       setThinking(true);
@@ -193,7 +215,7 @@ const Dashboard = () => {
         setThinking(false);
       }
     },
-    [activeRoteiroId, user]
+    [activeRoteiroId, user, clearTrip]
   );
 
   // ─── New roteiro ───
