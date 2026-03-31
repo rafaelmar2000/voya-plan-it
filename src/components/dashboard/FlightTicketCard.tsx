@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plane, ExternalLink, Search, Check } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plane, ExternalLink, Search, Check, Clock, MapPin, CircleDot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
+import { parseFlightMeta, type FlightClassPrice } from "@/lib/parseFlightDetails";
 import { useMyTrip } from "@/contexts/MyTripContext";
 
 interface FlightTicketCardProps {
@@ -19,14 +20,17 @@ interface FlightTicketCardProps {
   index: number;
 }
 
-const FLIGHT_CLASSES = ["Econômica", "Executiva"] as const;
-
 const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>("Econômica");
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
+
+  const meta = useMemo(
+    () => parseFlightMeta(flight.description, flight.detailsText),
+    [flight.description, flight.detailsText]
+  );
 
   const logo = flight.photoUrl;
   const flightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(flight.name + " " + flight.description)}`;
@@ -36,10 +40,11 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const destination = routeMatch?.[2] ?? "";
   const hasRoute = origin && destination;
 
-  const extraInfo = flight.description
-    .replace(/([A-Z]{3})\s*[✈️➡→\-]+\s*([A-Z]{3})/, "")
-    .replace(/^[\s,\-–|]+/, "")
-    .trim();
+  // Get price for the currently selected class
+  const activeClassPrice: FlightClassPrice | undefined = meta.classPrices.find(
+    (cp) => cp.className.toLowerCase() === selectedClass.toLowerCase()
+  );
+  const displayPrice = activeClassPrice?.price ?? flight.price;
 
   const selected = isSelected(flight.name);
   const tripItem = getItem(flight.name);
@@ -49,14 +54,22 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
     if (selected) {
       if (tripItem) removeItem(tripItem.id);
     } else {
-      addItem(flight);
+      // Build a modified flight item with the correct class price
+      const flightWithClassPrice: ParsedHotel = {
+        ...flight,
+        price: displayPrice,
+      };
+      addItem(flightWithClassPrice, selectedClass);
     }
   };
 
   const handleSelectWithClass = () => {
-    // Remove any existing selection for this flight
     if (tripItem) removeItem(tripItem.id);
-    addItem(flight, selectedClass);
+    const flightWithClassPrice: ParsedHotel = {
+      ...flight,
+      price: activeClassPrice?.price ?? flight.price,
+    };
+    addItem(flightWithClassPrice, selectedClass);
     setDetailsOpen(false);
   };
 
@@ -85,29 +98,38 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
             )}
           </div>
 
-          {/* Route + details */}
+          {/* Route + meta info */}
           <div className="flex-1 min-w-0">
-            {hasRoute ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tracking-wider text-foreground font-mono">{origin}</span>
-                <Plane className="w-3 h-3 text-primary" />
-                <span className="text-sm font-bold tracking-wider text-foreground font-mono">{destination}</span>
-              </div>
-            ) : (
-              <p className="text-sm text-foreground truncate">{flight.name}</p>
-            )}
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              {extraInfo || flight.name}
+            <div className="flex items-center gap-2">
+              {hasRoute ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold tracking-wider text-foreground font-mono">{origin}</span>
+                  <Plane className="w-3 h-3 text-primary" />
+                  <span className="text-sm font-bold tracking-wider text-foreground font-mono">{destination}</span>
+                </div>
+              ) : (
+                <p className="text-sm text-foreground truncate">{flight.name}</p>
+              )}
+              <span className="text-[10px] text-muted-foreground border border-border/20 px-1.5 py-0.5 rounded-sm">
+                {meta.connectionLabel}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1.5">
+              {meta.flightNumber && <span>{meta.flightNumber}</span>}
+              {meta.flightNumber && meta.departureTime && <span>·</span>}
+              {meta.departureTime && <span>{meta.departureTime}</span>}
+              {(meta.flightNumber || meta.departureTime) && <span>·</span>}
+              <span>{selectedClass}</span>
             </p>
           </div>
 
           {/* Price */}
           <span className="text-sm font-bold text-primary font-mono shrink-0">
-            {flight.price}
+            {displayPrice}
           </span>
         </button>
 
-        {/* Quick select button */}
+        {/* Quick select */}
         <button
           onClick={handleSelect}
           className={`shrink-0 h-9 w-9 rounded-md flex items-center justify-center transition-colors duration-150 ${
@@ -132,12 +154,14 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
             {hasRoute && (
               <DialogDescription className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
                 {origin} → {destination}
+                {meta.flightNumber && <span className="text-xs">· {meta.flightNumber}</span>}
               </DialogDescription>
             )}
           </DialogHeader>
 
           <ScrollArea className="h-[70vh]">
             <div className="space-y-6 px-6 pb-6 pt-4">
+              {/* Route visual */}
               {hasRoute && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-6 flex items-center justify-center gap-6">
                   <div className="text-center">
@@ -156,33 +180,86 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
                 </div>
               )}
 
-              {/* Price */}
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">Preço estimado</p>
-                  <span className="text-3xl font-bold text-primary tracking-tight">{flight.price}</span>
-                </div>
-                <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">{flight.badge}</Badge>
-              </div>
+              {/* Connections Timeline */}
+              {meta.connections.length > 0 && (
+                <div className="space-y-2">
+                  <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Conexões</h5>
+                  <div className="relative pl-5 space-y-4">
+                    {/* Vertical line */}
+                    <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border/40" />
 
-              {/* Class selection */}
+                    {/* Origin */}
+                    <div className="flex items-center gap-3 relative">
+                      <Plane className="w-3.5 h-3.5 text-primary shrink-0 relative z-10 bg-background" />
+                      <span className="text-sm text-foreground font-medium">{origin || "Partida"}</span>
+                    </div>
+
+                    {/* Stops */}
+                    {meta.connections.map((conn, i) => (
+                      <div key={i} className="flex items-start gap-3 relative">
+                        <CircleDot className="w-3.5 h-3.5 text-accent shrink-0 relative z-10 bg-background mt-0.5" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-sm text-foreground">{conn.city}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span className="text-[11px]">Espera: {conn.waitTime}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Destination */}
+                    <div className="flex items-center gap-3 relative">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0 relative z-10 bg-background" />
+                      <span className="text-sm text-foreground font-medium">{destination || "Destino"}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Class Selection with Prices */}
               <div className="space-y-2">
                 <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Classe</h5>
                 <div className="flex gap-2">
-                  {FLIGHT_CLASSES.map((cls) => (
-                    <button
-                      key={cls}
-                      onClick={() => setSelectedClass(cls)}
-                      className={`flex-1 py-2.5 rounded-md text-xs font-medium border transition-colors ${
-                        selectedClass === cls
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/30 bg-muted/20 text-muted-foreground hover:border-border/50"
-                      }`}
-                    >
-                      {cls}
-                    </button>
-                  ))}
+                  {(meta.classPrices.length > 0
+                    ? meta.classPrices.map((cp) => cp.className)
+                    : ["Econômica", "Executiva"]
+                  ).map((cls) => {
+                    const cp = meta.classPrices.find((p) => p.className.toLowerCase() === cls.toLowerCase());
+                    return (
+                      <button
+                        key={cls}
+                        onClick={() => setSelectedClass(cls)}
+                        className={`flex-1 py-2.5 rounded-md text-xs font-medium border transition-colors flex flex-col items-center gap-1 ${
+                          selectedClass === cls
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border/30 bg-muted/20 text-muted-foreground hover:border-border/50"
+                        }`}
+                      >
+                        <span>{cls}</span>
+                        {cp && (
+                          <span className={`text-[11px] font-bold ${selectedClass === cls ? "text-primary" : "text-muted-foreground"}`}>
+                            {cp.price}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
+
+              {/* Price display */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-5 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">
+                    {selectedClass}
+                  </p>
+                  <span className="text-3xl font-bold text-primary tracking-tight">{displayPrice}</span>
+                </div>
+                <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">{meta.connectionLabel}</Badge>
               </div>
 
               <Separator className="bg-border/40" />
@@ -205,7 +282,7 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
                 {selected ? "Selecionado — Alterar Classe" : `Selecionar ${selectedClass} para meu Roteiro`}
               </button>
 
-              {/* Search link */}
+              {/* Google Flights link */}
               <a
                 href={flightsUrl}
                 target="_blank"
