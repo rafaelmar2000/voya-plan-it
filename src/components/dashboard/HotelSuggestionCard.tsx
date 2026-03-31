@@ -27,8 +27,20 @@ interface HotelSuggestionCardProps {
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const { addItem, removeItem, isSelected, getItem } = useMyTrip();
   const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
+  const selected = isSelected(hotel.name);
+  const tripItem = getItem(hotel.name);
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selected && tripItem) {
+      removeItem(tripItem.id);
+    } else {
+      addItem(hotel);
+    }
+  };
 
   return (
     <>
