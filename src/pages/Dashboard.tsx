@@ -127,11 +127,8 @@ const Dashboard = () => {
       // Persist user message
       await persistMessage(roteiroId, "user", text);
 
-      // Build payload from current state snapshot (avoid stale closure)
-      let currentMessages: Message[] = [];
-      setMessages((prev) => { currentMessages = prev; return prev; });
-      const apiMessages = currentMessages.map(({ role, content }) => ({ role, content }));
-
+      // Use ref for up-to-date messages (avoids stale closure)
+      const apiMessages = messagesRef.current.map(({ role, content }) => ({ role, content }));
       const payload = JSON.stringify({ messages: apiMessages });
 
       try {
