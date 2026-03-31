@@ -17,7 +17,7 @@ export interface FlightMeta {
   flightNumber: string;
   departureTime: string;
   connections: FlightConnection[];
-  connectionLabel: string; // "Direto" | "1 Conexão" | "2 Conexões"
+  connectionLabel: string;
   classPrices: FlightClassPrice[];
 }
 
@@ -27,32 +27,43 @@ function extractNumeric(price: string): number {
   return isNaN(num) ? 0 : num;
 }
 
-/**
- * Parse flight metadata from the RESUMO (description) and DETALHES (detailsText) fields.
- */
 export function parseFlightMeta(description: string, detailsText: string): FlightMeta {
   const combined = `${description}\n${detailsText}`;
 
-  // Flight number: e.g. "AA 123", "LATAM 3469", "GOL 1234"
+  // Flight number
   const flightNumMatch = combined.match(/(?:voo|flight|n[úu]mero)?\s*(?:#?\s*)?([A-Z]{2,5}\s?\d{2,5})/i);
   const flightNumber = flightNumMatch ? flightNumMatch[1].trim() : "";
 
-  // Departure time: e.g. "08:30", "14h00", "partida às 10:45"
-  const timeMatch = combined.match(/(?:partida|sa[ií]da|decolagem|hor[áa]rio)?\s*(?:[àa]s?\s*)?(\d{1,2}[h:]\d{2})/i);
+  // Departure time — require a keyword before the time to avoid matching connection durations
+  const timeMatch = combined.match(/(?:partida|sa[ií]da|decolagem|hor[áa]rio)\s*(?:[àa]s?\s*:?\s*)(\d{1,2}[h:]\d{2})/i);
   const departureTime = timeMatch ? timeMatch[1].replace("h", ":") : "";
 
-  // Connections: look for patterns like "Conexão em Miami (2h30)" or "Escala: São Paulo - 1h45"
+  // ── Connections ──
   const connections: FlightConnection[] = [];
-  const connRegex = /(?:conex[ãa]o|escala|parada)\s*(?:em|:)?\s*([A-Za-zÀ-ú\s]+?)[\s\-–]*\(?(\d+h?\d*(?:min)?)\)?/gi;
+
+  // Pattern 1: "Conexão em Miami (2h30)" / "Escala: São Paulo - 1h45"
+  const connRegex = /(?:conex[ãa]o|escala|parada)\s*(?:em|:)?\s*([A-Za-zÀ-ú\s]+?)[\s\-–]*\(?\s*(\d+h?\s*\d*\s*(?:min)?)\s*\)?/gi;
   let connMatch;
   while ((connMatch = connRegex.exec(combined)) !== null) {
-    connections.push({
-      city: connMatch[1].trim(),
-      waitTime: connMatch[2].trim(),
-    });
+    connections.push({ city: connMatch[1].trim(), waitTime: connMatch[2].trim() });
   }
 
-  // If no structured connections found, check for "Direto" or count mentions
+  // Pattern 2: Bullet/numbered list under CONEXÕES header
+  // e.g. "CONEXÕES:\n- Miami (MIA): 2h30 de espera\n- Bogotá (BOG): 1h45"
+  const connSectionMatch = combined.match(/CONEX[ÕO]ES\s*:?\s*\n([\s\S]*?)(?=\n\s*(?:[A-Z_]{4,}|$))/i);
+  if (connSectionMatch) {
+    const lines = connSectionMatch[1].split("\n");
+    for (const line of lines) {
+      const lineMatch = line.match(/[-•*]\s*(.+?)\s*[:\-–]\s*(\d+h?\s*\d*\s*(?:min)?)/i);
+      if (lineMatch) {
+        const city = lineMatch[1].replace(/\([A-Z]{3}\)/g, "").trim();
+        if (!connections.some((c) => c.city.toLowerCase() === city.toLowerCase())) {
+          connections.push({ city, waitTime: lineMatch[2].trim() });
+        }
+      }
+    }
+  }
+
   const isDirect = /\bdireto\b/i.test(combined) && connections.length === 0;
   const connectionCount = connections.length;
   const connectionLabel = isDirect || connectionCount === 0
@@ -61,20 +72,19 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
       ? "1 Conexão"
       : `${connectionCount} Conexões`;
 
-  // Class prices — multiple formats:
-  // 1) Tagged: PRECO_ECONOMICA: R$ 3.200 / PRECO_EXECUTIVA: R$ 8.500 / PRECO_PRIMEIRA: R$ 15.000
-  // 2) Inline: "Econômica: R$ 3.200" or "Executiva: R$ 8.500"
+  // ── Class prices ──
   const classPrices: FlightClassPrice[] = [];
   const seenClasses = new Set<string>();
 
-  // Format 1: PRECO_ECONOMICA / PRECO_EXECUTIVA / PRECO_PRIMEIRA tags
+  // Format 1: PRECO_ECONOMICA / PRECO_EXECUTIVA / PRECO_PRIMEIRA
   const taggedMap: Record<string, string> = {
     "PRECO_ECONOMICA": "Econômica",
     "PRECO_EXECUTIVA": "Executiva",
     "PRECO_PRIMEIRA": "Primeira Classe",
   };
   for (const [tag, label] of Object.entries(taggedMap)) {
-    const tagRegex = new RegExp(`${tag}\\s*:?\\s*((?:R\\$|US\\$|\\$|€)\\s?[\\d.,]+)`, "i");
+    // Match: PRECO_ECONOMICA: R$ 3.200  or  PRECO_ECONOMICA R$ 3.200,00
+    const tagRegex = new RegExp(`${tag}\\s*:?\\s*((?:R\\$|US\\$|\\$|€)\\s?[\\d.,]+(?:\\s*(?:mil|k))?)`, "i");
     const tagMatch = combined.match(tagRegex);
     if (tagMatch) {
       const price = tagMatch[1].trim();
@@ -83,23 +93,25 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
     }
   }
 
-  // Format 2: inline "Econômica: R$ 3.200"
-  const classPriceRegex = /(econ[oô]mica|executiva|premium|primeira\s*classe)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi;
-  let cpMatch;
-  while ((cpMatch = classPriceRegex.exec(combined)) !== null) {
-    let className = cpMatch[1].charAt(0).toUpperCase() + cpMatch[1].slice(1).toLowerCase();
-    className = className.replace("Economica", "Econômica");
-    if (seenClasses.has(className.toLowerCase())) continue; // avoid duplicates
-    const price = cpMatch[2].trim();
-    classPrices.push({ className, price, priceNumeric: extractNumeric(price) });
-    seenClasses.add(className.toLowerCase());
+  // Format 2: "Preço Econômica: R$ 3.200" or "Econômica: R$ 3.200"
+  const inlinePatterns = [
+    /(econ[oô]mica)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi,
+    /(executiva)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi,
+    /(premium)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi,
+    /(primeira\s*classe)\s*:?\s*((?:R\$|US\$|\$|€)\s?[\d.,]+)/gi,
+  ];
+
+  for (const regex of inlinePatterns) {
+    let cpMatch;
+    while ((cpMatch = regex.exec(combined)) !== null) {
+      let className = cpMatch[1].charAt(0).toUpperCase() + cpMatch[1].slice(1).toLowerCase();
+      className = className.replace("Economica", "Econômica");
+      if (seenClasses.has(className.toLowerCase())) continue;
+      const price = cpMatch[2].trim();
+      classPrices.push({ className, price, priceNumeric: extractNumeric(price) });
+      seenClasses.add(className.toLowerCase());
+    }
   }
 
-  return {
-    flightNumber,
-    departureTime,
-    connections,
-    connectionLabel,
-    classPrices,
-  };
+  return { flightNumber, departureTime, connections, connectionLabel, classPrices };
 }
