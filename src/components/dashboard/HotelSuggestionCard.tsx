@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { ExternalLink, MapPin, Sparkles, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
+import { useMyTrip } from "@/contexts/MyTripContext";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
@@ -26,8 +27,20 @@ interface HotelSuggestionCardProps {
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const { addItem, removeItem, isSelected, getItem } = useMyTrip();
   const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
+  const selected = isSelected(hotel.name);
+  const tripItem = getItem(hotel.name);
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selected && tripItem) {
+      removeItem(tripItem.id);
+    } else {
+      addItem(hotel);
+    }
+  };
 
   return (
     <>
@@ -84,6 +97,17 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
               onClick={() => setDetailsOpen(true)}
             >
               Ver Detalhes
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSelect}
+              className={`text-xs h-8 px-3 transition-colors ${
+                selected
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                  : "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+              }`}
+            >
+              {selected ? <><Check className="w-3 h-3 mr-1" /> Selecionado</> : "+ Roteiro"}
             </Button>
             <a
               href={mapsUrl}

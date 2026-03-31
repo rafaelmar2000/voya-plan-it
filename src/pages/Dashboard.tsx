@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ChatBubble from "@/components/dashboard/ChatBubble";
 import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
+import BudgetSummary from "@/components/dashboard/BudgetSummary";
+import { MyTripProvider } from "@/contexts/MyTripContext";
 
 const VOYA_API_URL = "https://neat-dove-89.rafaelmar2000.deno.net";
 
@@ -219,6 +221,7 @@ const Dashboard = () => {
   };
 
   return (
+    <MyTripProvider>
     <div className="h-screen flex bg-background overflow-hidden">
       <DashboardSidebar
         collapsed={sidebarCollapsed}
@@ -247,6 +250,8 @@ const Dashboard = () => {
             </button>
           )}
         </div>
+
+        <BudgetSummary />
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
@@ -278,6 +283,7 @@ const Dashboard = () => {
         <DashboardChatInput onSend={handleSend} loading={thinking} />
       </div>
     </div>
+    </MyTripProvider>
   );
 };
 
