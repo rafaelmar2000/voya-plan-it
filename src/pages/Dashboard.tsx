@@ -138,6 +138,10 @@ const Dashboard = () => {
       if (!lastMsg || lastMsg.content !== text || lastMsg.role !== "user") {
         currentMsgs.push({ role: "user", content: text });
       }
+
+      // Debug: log payload before sending
+      console.log("[Voya] Sending payload:", JSON.stringify({ messages: currentMsgs }));
+
       const payload = JSON.stringify({ messages: currentMsgs });
 
       try {
@@ -156,12 +160,12 @@ const Dashboard = () => {
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
-        const text = await res.text();
-        if (!text || text.trim().length === 0) {
+        const responseText = await res.text();
+        if (!responseText || responseText.trim().length === 0) {
           throw new Error("Corpo vazio na resposta do servidor");
         }
 
-        const data = JSON.parse(text);
+        const data = JSON.parse(responseText);
         const replyContent = data.content || "Sem resposta.";
 
         const reply: Message = {
