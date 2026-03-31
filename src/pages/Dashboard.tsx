@@ -241,16 +241,25 @@ const Dashboard = () => {
             <div className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-xs text-muted-foreground tracking-wide">Voya online</span>
           </div>
-          {activeRoteiroId && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleClearCurrentChat}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
-              title="Limpar roteiro atual"
+              onClick={handleNewRoteiro}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+              title="Novo Roteiro"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Limpar Roteiro</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Novo Roteiro</span>
             </button>
-          )}
+            {activeRoteiroId && (
+              <button
+                onClick={handleClearCurrentChat}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors"
+                title="Limpar roteiro atual"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Limpar Roteiro</span>
+              </button>
+            )}
         </div>
 
         <BudgetSummary />
