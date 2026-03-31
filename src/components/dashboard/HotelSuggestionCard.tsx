@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { ExternalLink, MapPin, Sparkles, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
+import { useMyTrip } from "@/contexts/MyTripContext";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
