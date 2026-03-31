@@ -260,6 +260,7 @@ const Dashboard = () => {
                 <span className="hidden sm:inline">Limpar Roteiro</span>
               </button>
             )}
+          </div>
         </div>
 
         <BudgetSummary />
