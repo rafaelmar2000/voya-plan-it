@@ -77,19 +77,25 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
   const seenClasses = new Set<string>();
 
   // Format 1: PRECO_ECONOMICA / PRECO_EXECUTIVA / PRECO_PRIMEIRA
-  const taggedMap: Record<string, string> = {
-    "PRECO_ECONOMICA": "Econômica",
-    "PRECO_EXECUTIVA": "Executiva",
-    "PRECO_PRIMEIRA": "Primeira Classe",
+  // Also supports PREÇO_ECONOMICA, PRECO ECONOMICA, etc.
+  const taggedMap: Record<string, string[]> = {
+    "Econômica": ["PRECO_ECONOMICA", "PREÇO_ECONOMICA", "PRECO_ECONÔMICA", "PREÇO_ECONÔMICA", "PRECO ECONOMICA"],
+    "Executiva": ["PRECO_EXECUTIVA", "PREÇO_EXECUTIVA", "PRECO EXECUTIVA"],
+    "Primeira Classe": ["PRECO_PRIMEIRA", "PREÇO_PRIMEIRA", "PRECO PRIMEIRA"],
   };
-  for (const [tag, label] of Object.entries(taggedMap)) {
-    // Match: PRECO_ECONOMICA: R$ 3.200  or  PRECO_ECONOMICA R$ 3.200,00
-    const tagRegex = new RegExp(`${tag}\\s*:?\\s*((?:R\\$|US\\$|\\$|€)\\s?[\\d.,]+(?:\\s*(?:mil|k))?)`, "i");
-    const tagMatch = combined.match(tagRegex);
-    if (tagMatch) {
-      const price = tagMatch[1].trim();
-      classPrices.push({ className: label, price, priceNumeric: extractNumeric(price) });
-      seenClasses.add(label.toLowerCase());
+  for (const [label, tags] of Object.entries(taggedMap)) {
+    for (const tag of tags) {
+      const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const tagRegex = new RegExp(`${escaped}\\s*:?\\s*((?:R\\$|US\\$|\\$|€)\\s?[\\d.,]+(?:\\s*(?:mil|k))?)`, "i");
+      const tagMatch = combined.match(tagRegex);
+      if (tagMatch) {
+        const price = tagMatch[1].trim();
+        if (!seenClasses.has(label.toLowerCase())) {
+          classPrices.push({ className: label, price, priceNumeric: extractNumeric(price) });
+          seenClasses.add(label.toLowerCase());
+        }
+        break;
+      }
     }
   }
 
