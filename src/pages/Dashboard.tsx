@@ -195,6 +195,7 @@ const Dashboard = () => {
   // ─── New roteiro ───
   const handleNewRoteiro = () => {
     setActiveRoteiroId(null);
+    clearTrip();
     setMessages([
       {
         id: Date.now().toString(),
