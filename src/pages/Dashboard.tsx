@@ -282,7 +282,7 @@ const Dashboard = () => {
         <DashboardChatInput onSend={handleSend} loading={thinking} />
       </div>
     </div>
-    </MyTripProvider>
+  );
   );
 };
 
