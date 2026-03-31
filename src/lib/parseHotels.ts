@@ -194,5 +194,6 @@ export function parseHotelsFromText(text: string): { introText: string; hotels: 
     result.introText = result.introText.replace(/\[\/?(?:\w+)\]/g, "").replace(/^[:\s]+/, "").trim();
     return result;
   }
-  return parseLegacySuggestions(text);
+  // No [CATEGORIA] tags → plain text, no cards
+  return { introText: normalizeText(text), hotels: [] };
 }
