@@ -221,7 +221,6 @@ const Dashboard = () => {
   };
 
   return (
-    <MyTripProvider>
     <div className="h-screen flex bg-background overflow-hidden">
       <DashboardSidebar
         collapsed={sidebarCollapsed}
