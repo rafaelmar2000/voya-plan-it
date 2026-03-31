@@ -6,7 +6,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ChatBubble from "@/components/dashboard/ChatBubble";
 import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
 import BudgetSummary from "@/components/dashboard/BudgetSummary";
-import { MyTripProvider } from "@/contexts/MyTripContext";
+
 
 const VOYA_API_URL = "https://neat-dove-89.rafaelmar2000.deno.net";
 
