@@ -98,6 +98,17 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             >
               Ver Detalhes
             </Button>
+            <Button
+              size="sm"
+              onClick={handleSelect}
+              className={`text-xs h-8 px-3 transition-colors ${
+                selected
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                  : "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+              }`}
+            >
+              {selected ? <><Check className="w-3 h-3 mr-1" /> Selecionado</> : "+ Roteiro"}
+            </Button>
             <a
               href={mapsUrl}
               target="_blank"
