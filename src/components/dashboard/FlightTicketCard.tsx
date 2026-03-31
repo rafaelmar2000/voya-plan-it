@@ -100,7 +100,7 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
 
           {/* Route + meta info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {hasRoute ? (
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-bold tracking-wider text-foreground font-mono">{origin}</span>
@@ -114,13 +114,30 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
                 {meta.connectionLabel}
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1.5">
-              {meta.flightNumber && <span>{meta.flightNumber}</span>}
-              {meta.flightNumber && meta.departureTime && <span>·</span>}
-              {meta.departureTime && <span>{meta.departureTime}</span>}
-              {(meta.flightNumber || meta.departureTime) && <span>·</span>}
-              <span>{selectedClass}</span>
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                {meta.flightNumber && <span>{meta.flightNumber}</span>}
+                {meta.flightNumber && meta.departureTime && <span>·</span>}
+                {meta.departureTime && <span>{meta.departureTime}</span>}
+              </p>
+              {/* Class badges */}
+              {meta.classPrices.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {meta.classPrices.map((cp) => (
+                    <span
+                      key={cp.className}
+                      className={`text-[9px] px-1.5 py-0.5 rounded-sm border transition-colors cursor-default ${
+                        selectedClass === cp.className
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-border/20 text-muted-foreground"
+                      }`}
+                    >
+                      {cp.className}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Price */}
