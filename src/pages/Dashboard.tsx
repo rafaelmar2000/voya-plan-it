@@ -127,9 +127,14 @@ const Dashboard = () => {
       // Persist user message
       await persistMessage(roteiroId, "user", text);
 
-      // Use ref for up-to-date messages (avoids stale closure)
-      const apiMessages = messagesRef.current.map(({ role, content }) => ({ role, content }));
-      const payload = JSON.stringify({ messages: apiMessages });
+      // Build payload from ref + the new user message to guarantee it's included
+      const currentMsgs = messagesRef.current.map(({ role, content }) => ({ role, content }));
+      // Ensure the user message we just added is present (ref may lag one render)
+      const lastMsg = currentMsgs[currentMsgs.length - 1];
+      if (!lastMsg || lastMsg.content !== text || lastMsg.role !== "user") {
+        currentMsgs.push({ role: "user", content: text });
+      }
+      const payload = JSON.stringify({ messages: currentMsgs });
 
       try {
         const res = await fetch(VOYA_API_URL, {
