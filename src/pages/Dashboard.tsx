@@ -29,6 +29,12 @@ const Dashboard = () => {
   const [thinking, setThinking] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<Message[]>(messages);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -121,11 +127,8 @@ const Dashboard = () => {
       // Persist user message
       await persistMessage(roteiroId, "user", text);
 
-      // Build payload from current state snapshot (avoid stale closure)
-      let currentMessages: Message[] = [];
-      setMessages((prev) => { currentMessages = prev; return prev; });
-      const apiMessages = currentMessages.map(({ role, content }) => ({ role, content }));
-
+      // Use ref for up-to-date messages (avoids stale closure)
+      const apiMessages = messagesRef.current.map(({ role, content }) => ({ role, content }));
       const payload = JSON.stringify({ messages: apiMessages });
 
       try {
