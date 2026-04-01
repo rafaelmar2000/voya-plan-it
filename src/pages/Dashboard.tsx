@@ -9,7 +9,7 @@ import DashboardChatInput from "@/components/dashboard/DashboardChatInput";
 import BudgetSummary from "@/components/dashboard/BudgetSummary";
 
 
-const VOYA_API_URL = "https://wide-lobster-46.deno.dev";
+const VOYA_API_URL = "https://wide-lobster-46.rafaelmar200050.deno.net";
 
 interface Message {
   id: string;
