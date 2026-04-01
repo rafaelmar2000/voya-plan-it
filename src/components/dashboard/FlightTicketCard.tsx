@@ -36,17 +36,18 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   }, [flight.description, flight.detailsText, flight.name]);
 
   const logo = flight.photoUrl;
+
+  const routeMatch = flight.description.match(/([A-Z]{3})\s*[✈️➡→\-]+\s*([A-Z]{3})/);
+  const origin = routeMatch?.[1] ?? "";
+  const destination = routeMatch?.[2] ?? "";
+  const hasRoute = origin && destination;
+
   const flightsUrl = (() => {
     if (origin && destination) {
       return `https://www.google.com/travel/flights#flt=${origin}.${destination};c:BRL;e:1;sd:1;t:f`;
     }
     return `https://www.google.com/travel/flights`;
   })();
-
-  const routeMatch = flight.description.match(/([A-Z]{3})\s*[✈️➡→\-]+\s*([A-Z]{3})/);
-  const origin = routeMatch?.[1] ?? "";
-  const destination = routeMatch?.[2] ?? "";
-  const hasRoute = origin && destination;
 
   // Get price for the currently selected class
   const activeClassPrice: FlightClassPrice | undefined = meta.classPrices.find(
