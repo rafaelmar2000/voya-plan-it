@@ -26,7 +26,7 @@ const WELCOME_MESSAGE: Message = {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { clearTrip } = useMyTrip();
+  const { clearTrip, setOnItemAdded } = useMyTrip();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeRoteiroId, setActiveRoteiroId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -216,6 +216,16 @@ const Dashboard = () => {
       }
     },
     [activeRoteiroId, user, clearTrip]
+  );
+
+  useEffect(() => {
+    setOnItemAdded((tripItem) => {
+      if (tripItem.item.kind === "flight") {
+        const destino = tripItem.item.description.match(/[A-Z]{3}\s*[✈️➡→\-]+\s*([A-Z]{3})/)?.[1] || "";
+        handleSend(`Selecionei o voo ${tripItem.item.name} (${tripItem.selectedClass}). Agora quero ver opções de hotéis em ${destino}.`);
+      }
+    });
+  }, [handleSend, setOnItemAdded]
   );
 
   // ─── New roteiro ───

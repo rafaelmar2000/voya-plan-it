@@ -16,6 +16,8 @@ interface MyTripContextValue {
   getItem: (name: string) => TripItem | undefined;
   totalBudget: number;
   clearTrip: () => void;
+  onItemAdded?: (item: TripItem) => void;
+  setOnItemAdded: (cb: (item: TripItem) => void) => void;
 }
 
 const MyTripContext = createContext<MyTripContextValue | null>(null);
@@ -28,6 +30,7 @@ function extractNumericPrice(price: string): number {
 
 export function MyTripProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<TripItem[]>([]);
+  const [onItemAdded, setOnItemAdded] = useState<((item: TripItem) => void) | undefined>();
 
   const addItem = useCallback((item: ParsedHotel, selectedClass?: string) => {
     const id = `${item.name}-${item.kind}-${selectedClass || ""}`;
@@ -35,7 +38,8 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
       if (prev.some((i) => i.id === id)) return prev;
       return [...prev, { id, item, selectedClass, priceNumeric: extractNumericPrice(item.price) }];
     });
-  }, []);
+    onItemAdded?.({ id, item, selectedClass, priceNumeric: extractNumericPrice(item.price) });
+  }, [onItemAdded]);
 
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -56,7 +60,7 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
   const clearTrip = useCallback(() => setItems([]), []);
 
   return (
-    <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip }}>
+    <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip, onItemAdded, setOnItemAdded }}>
       {children}
     </MyTripContext.Provider>
   );
