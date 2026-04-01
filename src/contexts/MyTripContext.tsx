@@ -60,7 +60,7 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
   const clearTrip = useCallback(() => setItems([]), []);
 
   return (
-    <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip }}>
+    <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip, onItemAdded, setOnItemAdded }}>
       {children}
     </MyTripContext.Provider>
   );
