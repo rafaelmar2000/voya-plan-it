@@ -28,6 +28,8 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
   const meta = useMemo(() => {
+    console.log("[DEBUG flight.description]", flight.description);
+    console.log("[DEBUG flight.detailsText]", flight.detailsText);
     const parsed = parseFlightMeta(flight.description, flight.detailsText);
     console.log("[FlightTicketCard] Parsed meta for", flight.name, parsed);
     return parsed;
