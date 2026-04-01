@@ -121,5 +121,5 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
     }
   }
 
-  return { flightNumber, departureTime, connections, connectionLabel, classPrices };
+  return { flightNumber, departureTime, arrivalTime, schedule, connections, connectionLabel, classPrices };
 }
