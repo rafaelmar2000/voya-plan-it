@@ -1,5 +1,6 @@
-import { Loader2, Compass } from "lucide-react";
+import { Loader2, Compass, UtensilsCrossed } from "lucide-react";
 import { parseHotelsFromText } from "@/lib/parseHotels";
+import type { ParsedHotel } from "@/lib/parseHotels";
 import HotelSuggestionCard from "@/components/dashboard/HotelSuggestionCard";
 import FlightTicketCard from "@/components/dashboard/FlightTicketCard";
 import CuisineSelector from "@/components/dashboard/CuisineSelector";
@@ -13,6 +14,25 @@ function renderMarkdownBold(text: string): React.ReactNode[] {
     if (bold) return <strong key={i} className="font-semibold">{bold[1]}</strong>;
     return <React.Fragment key={i}>{part}</React.Fragment>;
   });
+}
+
+function extractCategory(hotel: ParsedHotel): string {
+  const m = hotel.detailsText.match(/CATEGORIA:\s*([^\n]+)/);
+  if (m) return m[1].trim();
+  const d = hotel.description.match(/\[([^\]]+)\]/);
+  if (d) return d[1].trim();
+  if (hotel.badge && hotel.badge !== "Spot Recomendado" && hotel.badge !== "Recomendado pelo Voya") return hotel.badge;
+  return "Geral";
+}
+
+function groupByCategory(items: ParsedHotel[]): Record<string, ParsedHotel[]> {
+  const groups: Record<string, ParsedHotel[]> = {};
+  for (const item of items) {
+    const cat = extractCategory(item);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(item);
+  }
+  return groups;
 }
 
 interface ChatBubbleProps {
@@ -39,10 +59,11 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
     ? parseHotelsFromText(cleanContent)
     : { introText: cleanContent, hotels: [] };
 
-  console.log("PARSED hotels:", hotels.length, hotels.map(h => ({name: h.name, kind: h.kind})));
-
   const flights = hotels.filter((h) => h.kind === "flight");
-  const nonFlights = hotels.filter((h) => h.kind !== "flight");
+  const hotelItems = hotels.filter((h) => h.kind === "hotel" || h.kind === "generic");
+  const attractionItems = hotels.filter((h) => h.kind === "attraction");
+
+  const attractionGroups = groupByCategory(attractionItems);
 
   const handleCuisineConfirm = (selected: string[]) => {
     if (!onSend) return;
@@ -65,6 +86,9 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
 
   const cidadeMatch = cleanContent.match(/em\s+([A-Za-zÀ-ú\s]+?)[\.,!]/i);
   const cidade = cidadeMatch?.[1]?.trim() || "destino";
+
+  const isRestaurantCategory = (cat: string) =>
+    /Restaurante|Culinária|Fast|Café|Italiana|Japonesa|Americana|Francesa|Mexicana|Churrasco|Frutos/i.test(cat);
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
@@ -92,6 +116,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
           </div>
         )}
 
+        {/* Voos */}
         {flights.length > 0 && (
           <div className="mt-4 grid grid-cols-1 gap-3">
             {flights.map((f, i) => (
@@ -101,23 +126,42 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
         )}
 
         {/* Hotéis */}
-        {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").length > 0 && (
+        {hotelItems.length > 0 && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").map((hotel, i) => (
+            {hotelItems.map((hotel, i) => (
               <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
             ))}
           </div>
         )}
 
-        {/* Atrações e Restaurantes */}
-        {nonFlights.filter(h => h.kind === "attraction").length > 0 && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {nonFlights.filter(h => h.kind === "attraction").map((hotel, i) => (
-              <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
+        {/* Atrações e Restaurantes agrupados por categoria */}
+        {Object.keys(attractionGroups).length > 0 && (
+          <div className="mt-4 space-y-5">
+            {Object.entries(attractionGroups).map(([categoria, items]) => (
+              <div key={categoria}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1 bg-border/30" />
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {isRestaurantCategory(categoria)
+                      ? <UtensilsCrossed className="w-3.5 h-3.5" />
+                      : <Compass className="w-3.5 h-3.5" />
+                    }
+                    {categoria}
+                  </span>
+                  <div className="h-px flex-1 bg-border/30" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {items.map((item, i) => (
+                    <HotelSuggestionCard key={`${item.name}-${i}`} hotel={item} index={i} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
 
+        {/* Botão Ver Atrações */}
         {hasAttractionButton && !showAttractionSelector && !attractionConfirmed && (
           <button
             onClick={() => setShowAttractionSelector(true)}
