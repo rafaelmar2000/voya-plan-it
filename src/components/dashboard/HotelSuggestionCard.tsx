@@ -153,15 +153,15 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
 
       {/* Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden">
+        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden overflow-x-hidden">
           <DialogHeader className="px-6 pt-6 pb-0 text-left">
             <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">
               {hotel.name}
             </DialogTitle>
             {hotel.location && (
               <DialogDescription className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                <MapPin className="w-3.5 h-3.5" />
-                {hotel.location}
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{hotel.location?.startsWith('http') ? hotel.name : hotel.location}</span>
               </DialogDescription>
             )}
           </DialogHeader>
