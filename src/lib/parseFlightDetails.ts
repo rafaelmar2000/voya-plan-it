@@ -16,6 +16,8 @@ export interface FlightConnection {
 export interface FlightMeta {
   flightNumber: string;
   departureTime: string;
+  arrivalTime: string;
+  schedule: string;
   connections: FlightConnection[];
   connectionLabel: string;
   classPrices: FlightClassPrice[];
