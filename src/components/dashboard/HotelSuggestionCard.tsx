@@ -252,7 +252,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                               <span className="text-sm font-bold text-primary">{p.price}<span className="text-xs font-normal text-muted-foreground">/noite</span></span>
                               <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
