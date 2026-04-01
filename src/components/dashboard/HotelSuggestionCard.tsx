@@ -153,7 +153,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
 
       {/* Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden overflow-x-hidden">
+        <DialogContent className="bg-background border-border/50 w-[95vw] max-w-lg p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-0 text-left">
             <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">
               {hotel.name}
