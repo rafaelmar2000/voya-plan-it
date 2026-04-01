@@ -66,10 +66,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
     e.stopPropagation();
     if (selected && tripItem) removeItem(tripItem.id);
     else {
-      const hotelWithRoom = selectedRoom
-        ? { ...hotel, price: selectedRoom.price }
-        : hotel;
-      addItem(hotelWithRoom);
+      addItem(hotel);
     }
   };
 
