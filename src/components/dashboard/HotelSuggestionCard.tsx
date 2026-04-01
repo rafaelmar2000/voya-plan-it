@@ -55,7 +55,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
   const selected = isSelected(hotel.name);
   const tripItem = getItem(hotel.name);
-  const rooms = parseRooms(hotel.detailsText);
+  
 
   const getDetail = (key: string) => {
     const m = hotel.detailsText.match(new RegExp(`${key}:\\s*([^\\n]+)`));
