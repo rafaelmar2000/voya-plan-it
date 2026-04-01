@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MapPin, Sparkles, Check } from "lucide-react";
+import { ExternalLink, MapPin, Sparkles, Check, BedDouble } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -7,38 +7,61 @@ import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import type { ParsedHotel } from "@/lib/parseHotels";
 import { useMyTrip } from "@/contexts/MyTripContext";
 
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
 
-interface HotelSuggestionCardProps {
-  hotel: ParsedHotel;
-  index: number;
+interface Room { name: string; price: string; }
+
+function parseRooms(detailsText: string): Room[] {
+  const rooms: Room[] = [];
+  const quartosSectionMatch = detailsText.match(/QUARTOS:([\s\S]*?)(?=\n[A-Z_]+:|$)/);
+  if (!quartosSectionMatch) return rooms;
+  const lines = quartosSectionMatch[1].split("\n");
+  for (const line of lines) {
+    const match = line.match(/QUARTO_\d+:\s*(.+?)\s*\|\s*(.+)/);
+    if (match) rooms.push({ name: match[1].trim(), price: match[2].trim() });
+  }
+  return rooms;
 }
+
+function cleanDetailsText(detailsText: string): string {
+  return detailsText
+    .replace(/QUARTOS:[\s\S]*?(?=\n[A-Z_]+:|$)/, "")
+    .replace(/^(AVALIACAO|PRECO_NOITE|PRECO_TOTAL|COMODIDADES|LOGÍSTICA|LOGISTICA):.*/gm, "")
+    .trim();
+}
+
+interface HotelSuggestionCardProps { hotel: ParsedHotel; index: number; }
 
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
+
   const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
   const selected = isSelected(hotel.name);
   const tripItem = getItem(hotel.name);
+  const rooms = parseRooms(hotel.detailsText);
+
+  const getDetail = (key: string) => {
+    const m = hotel.detailsText.match(new RegExp(`${key}:\\s*([^\\n]+)`));
+    return m ? m[1].trim() : null;
+  };
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (selected && tripItem) {
-      removeItem(tripItem.id);
-    } else {
-      addItem(hotel);
+    if (selected && tripItem) removeItem(tripItem.id);
+    else {
+      const hotelWithRoom = selectedRoom
+        ? { ...hotel, price: selectedRoom.price }
+        : hotel;
+      addItem(hotelWithRoom);
     }
   };
 
@@ -55,9 +78,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
               className={`h-full w-full object-cover transition-all duration-500 ${imgLoaded ? "opacity-100 group-hover:scale-105" : "opacity-0"}`}
               loading="lazy"
               onLoad={() => setImgLoaded(true)}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-              }}
+              onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
             />
           </AspectRatio>
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
@@ -68,7 +89,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             </Badge>
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
-            <span className="text-sm font-bold text-primary">{hotel.price}</span>
+            <span className="text-sm font-bold text-primary">{selectedRoom ? selectedRoom.price : hotel.price}</span>
+            <span className="text-[10px] text-muted-foreground ml-1">/noite</span>
           </div>
         </div>
 
@@ -112,7 +134,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             <a
               href={mapsUrl}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
               className="inline-flex items-center justify-center text-xs h-8 px-3 rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
             >
@@ -124,7 +146,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
         </div>
       </div>
 
-      {/* Details Modal */}
+      {/* Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-0 text-left">
@@ -148,9 +170,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     src={primaryImage}
                     alt={hotel.name}
                     className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = FALLBACK_IMAGE;
-                    }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
                   />
                 </AspectRatio>
               </div>
@@ -162,31 +182,100 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     Preço estimado
                   </p>
                   <span className="text-3xl font-bold text-primary tracking-tight">
-                    {hotel.price}
+                    {selectedRoom ? selectedRoom.price : hotel.price}
                   </span>
+                  <span className="text-sm text-muted-foreground ml-1">/noite</span>
                 </div>
                 <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">
                   {hotel.badge}
                 </Badge>
               </div>
 
+              {/* Detalhes estruturados */}
+              {(getDetail("AVALIACAO") || getDetail("COMODIDADES") || getDetail("LOGÍSTICA") || getDetail("LOGISTICA")) && (
+                <div className="space-y-3">
+                  <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Detalhes</h5>
+                  {getDetail("AVALIACAO") && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Avaliação</span>
+                      <span className="font-medium text-foreground">{getDetail("AVALIACAO")}</span>
+                    </div>
+                  )}
+                  {getDetail("COMODIDADES") && (
+                    <div className="space-y-1.5">
+                      <p className="text-sm text-muted-foreground">Comodidades</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {getDetail("COMODIDADES")!.split(",").map((a) => (
+                          <Badge key={a.trim()} variant="outline" className="text-xs font-normal">{a.trim()}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(getDetail("LOGÍSTICA") || getDetail("LOGISTICA")) && (
+                    <div className="space-y-1.5">
+                      <p className="text-sm text-muted-foreground">Localização</p>
+                      <p className="text-sm text-foreground/80">{getDetail("LOGÍSTICA") || getDetail("LOGISTICA")}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tipos de quarto */}
+              {rooms.length > 0 && (
+                <>
+                  <Separator className="bg-border/40" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <BedDouble className="w-4 h-4 text-primary" />
+                      <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Tipos de Quarto</h5>
+                    </div>
+                    <div className="space-y-2">
+                      {rooms.map((room, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setSelectedRoom(selectedRoom?.name === room.name ? null : room)}
+                          className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all ${
+                            selectedRoom?.name === room.name
+                              ? "border-primary bg-primary/10"
+                              : "border-border/40 hover:border-primary/40 hover:bg-muted/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <BedDouble className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">{room.name}</span>
+                          </div>
+                          <span className="text-sm font-semibold text-primary">{room.price}<span className="text-xs text-muted-foreground font-normal">/noite</span></span>
+                        </button>
+                      ))}
+                    </div>
+                    {selectedRoom && (
+                      <p className="text-xs text-primary/80 text-center">
+                        Quarto selecionado: {selectedRoom.name}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
               <Separator className="bg-border/40" />
 
-              {/* Análise do Voya */}
-              <div className="space-y-3">
-                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">
-                  Análise do Voya
-                </h5>
-                <div className="text-[15px] text-muted-foreground/90 leading-[1.85] whitespace-pre-line">
-                  {hotel.detailsText}
-                </div>
-              </div>
+              {/* Botões */}
+              <button
+                onClick={(e) => { handleSelect(e); setDetailsOpen(false); }}
+                className={`w-full h-10 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  selected
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    : "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+                }`}
+              >
+                <Check className="w-4 h-4" />
+                {selected ? "Selecionado" : `Adicionar ao Roteiro${selectedRoom ? ` — ${selectedRoom.name}` : ""}`}
+              </button>
 
-              {/* Maps button */}
               <a
                 href={mapsUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noreferrer"
                 className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 <MapPin className="w-4 h-4 mr-2" />
