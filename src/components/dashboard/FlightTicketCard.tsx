@@ -301,6 +301,23 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
                       </p>
                     );
                   })}
+                {/* Horários e voo */}
+                {(meta.schedule || meta.flightNumber) && (
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 border border-border/40">
+                    {meta.schedule && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Horário</p>
+                        <p className="text-sm font-medium text-foreground">{meta.schedule}</p>
+                      </div>
+                    )}
+                    {meta.flightNumber && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Voo</p>
+                        <p className="text-sm font-medium text-foreground">{meta.flightNumber}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {(() => {
                   const logMatch = flight.detailsText.match(/LOG[ÍI]STICA:\s*(.+)/i);
                   return logMatch ? (
