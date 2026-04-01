@@ -118,8 +118,13 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                 {meta.flightNumber && <span>{meta.flightNumber}</span>}
-                {meta.flightNumber && meta.departureTime && <span>·</span>}
-                {meta.departureTime && <span>{meta.departureTime}</span>}
+                {meta.flightNumber && meta.schedule && <span>·</span>}
+                {meta.schedule && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {meta.schedule}
+                  </span>
+                )}
               </p>
               {/* Class badges */}
               {meta.classPrices.length > 0 && (

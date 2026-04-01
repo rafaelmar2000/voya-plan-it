@@ -16,6 +16,8 @@ export interface FlightConnection {
 export interface FlightMeta {
   flightNumber: string;
   departureTime: string;
+  arrivalTime: string;
+  schedule: string;
   connections: FlightConnection[];
   connectionLabel: string;
   classPrices: FlightClassPrice[];
@@ -34,9 +36,11 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
   const flightNumMatch = combined.match(/(?:voo|flight|n[úu]mero)?\s*(?:#?\s*)?([A-Z]{2,5}\s?\d{2,5})/i);
   const flightNumber = flightNumMatch ? flightNumMatch[1].trim() : "";
 
-  // Departure time — require a keyword before the time to avoid matching connection durations
-  const timeMatch = combined.match(/(?:partida|sa[ií]da|decolagem|hor[áa]rio)\s*(?:[àa]s?\s*:?\s*)(\d{1,2}[h:]\d{2})/i);
-  const departureTime = timeMatch ? timeMatch[1].replace("h", ":") : "";
+  // Schedule: extract "HH:MM - HH:MM" pattern from RESUMO line (e.g. "08:30 - 18:45")
+  const scheduleMatch = combined.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
+  const departureTime = scheduleMatch ? scheduleMatch[1] : "";
+  const arrivalTime = scheduleMatch ? scheduleMatch[2] : "";
+  const schedule = scheduleMatch ? `${scheduleMatch[1]} - ${scheduleMatch[2]}` : "";
 
   // ── Connections ──
   const connections: FlightConnection[] = [];
@@ -119,5 +123,5 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
     }
   }
 
-  return { flightNumber, departureTime, connections, connectionLabel, classPrices };
+  return { flightNumber, departureTime, arrivalTime, schedule, connections, connectionLabel, classPrices };
 }
