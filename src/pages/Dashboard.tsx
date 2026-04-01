@@ -323,7 +323,7 @@ const Dashboard = () => {
               </div>
             ) : (
               messages.map((msg) => (
-                <ChatBubble key={msg.id} role={msg.role} content={msg.content} hasFunctionCall={msg.hasFunctionCall} />
+                <ChatBubble key={msg.id} role={msg.role} content={msg.content} hasFunctionCall={msg.hasFunctionCall} onSend={handleSend} />
               ))
             )}
 
