@@ -363,7 +363,7 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
                 className="inline-flex items-center justify-center w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 <Search className="w-4 h-4 mr-2" />
-                Pesquisar Preços no Google Flights
+                Buscar {selectedClass} no Skyscanner
                 <ExternalLink className="w-3.5 h-3.5 ml-2" />
               </a>
             </div>
