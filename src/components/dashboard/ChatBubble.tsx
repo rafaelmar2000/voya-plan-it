@@ -75,6 +75,11 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
   const hotelItems = hotels.filter((h) => h.kind === "hotel" || h.kind === "generic");
   const attractionItems = hotels.filter((h) => h.kind === "attraction");
 
+  hotels.filter(h => h.kind === "attraction").forEach(h => {
+    console.log("ATTRACTION detailsText:", h.name, "|||", h.detailsText.slice(0, 200));
+    console.log("ATTRACTION description:", h.description);
+  });
+
   const attractionGroups = groupByCategory(attractionItems);
 
   const handleCuisineConfirm = (selected: string[]) => {
