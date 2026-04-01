@@ -248,28 +248,27 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
               {/* Class Selection with Prices */}
               <div className="space-y-2">
                 <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Classe</h5>
-                <div className="flex gap-2">
-                  {(meta.classPrices.length > 0
-                    ? meta.classPrices.map((cp) => cp.className)
-                    : ["Econômica", "Executiva"]
-                  ).map((cls) => {
-                    const cp = meta.classPrices.find((p) => p.className.toLowerCase() === cls.toLowerCase());
+                <div className="grid grid-cols-2 gap-2">
+                  {["Econômica", "Executiva"].map((cls) => {
+                    const cp = meta.classPrices.find(
+                      (p) => p.className.toLowerCase() === cls.toLowerCase()
+                    );
                     return (
                       <button
                         key={cls}
                         onClick={() => setSelectedClass(cls)}
-                        className={`flex-1 py-2.5 rounded-md text-xs font-medium border transition-colors flex flex-col items-center gap-1 ${
+                        className={`p-3 rounded-lg border text-left transition-all ${
                           selectedClass === cls
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border/30 bg-muted/20 text-muted-foreground hover:border-border/50"
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/40"
                         }`}
                       >
-                        <span>{cls}</span>
-                        {cp && (
-                          <span className={`text-[11px] font-bold ${selectedClass === cls ? "text-primary" : "text-muted-foreground"}`}>
-                            {cp.price}
-                          </span>
-                        )}
+                        <p className="text-xs text-muted-foreground mb-1">{cls}</p>
+                        <p className={`text-base font-display font-bold ${
+                          cp ? "text-primary" : "text-muted-foreground text-sm"
+                        }`}>
+                          {cp ? cp.price : "Sob consulta"}
+                        </p>
                       </button>
                     );
                   })}
