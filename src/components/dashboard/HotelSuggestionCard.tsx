@@ -240,7 +240,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                       <div className="space-y-2">
                         {providers.map((p, i) => (
                           <a key={i} href={p.link} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group">
+                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group overflow-hidden">
                             <div className="flex items-center gap-2">
                               <div className="flex flex-col">
                                 <span className="text-sm text-foreground font-medium flex items-center gap-1.5">
