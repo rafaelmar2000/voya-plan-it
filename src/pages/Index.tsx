@@ -131,7 +131,7 @@ const Index = () => {
         content: m.content,
       }));
 
-      const response = await fetch("https://wide-lobster-46.deno.dev", {
+      const response = await fetch("https://wide-lobster-46.rafaelmar200050.deno.net", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: allMessages }),
