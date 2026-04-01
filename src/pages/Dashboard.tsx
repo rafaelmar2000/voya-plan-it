@@ -225,6 +225,7 @@ const Dashboard = () => {
       MCO: "Orlando", CUN: "Cancún", EZE: "Buenos Aires",
       SCL: "Santiago", LAX: "Los Angeles", NRT: "Tokyo", DXB: "Dubai"
     };
+
     setOnItemAdded((tripItem) => {
       if (tripItem.item.kind === "flight") {
         const descricao = tripItem.item.description || "";
@@ -235,6 +236,13 @@ const Dashboard = () => {
           ? `Adicionei o voo ${tripItem.item.name} (${tripItem.selectedClass || "Econômica"}) ao meu roteiro. Agora quero ver hotéis em ${cidade}.`
           : `Adicionei o voo ao meu roteiro. Agora quero ver opções de hospedagem.`;
         handleSend(mensagem);
+      } else if (tripItem.item.kind === "hotel") {
+        const descricao = tripItem.item.description || "";
+        const location = tripItem.item.location || "";
+        const cidade = location.split(",").pop()?.trim() ||
+                       descricao.match(/em\s+([A-Za-zÀ-ú\s]+)/i)?.[1]?.trim() ||
+                       "destino";
+        handleSend(`Adicionei o hotel ${tripItem.item.name} ao meu roteiro. Agora quero ver opções de restaurantes em ${cidade}.`);
       }
     });
     return () => setOnItemAdded(null);
