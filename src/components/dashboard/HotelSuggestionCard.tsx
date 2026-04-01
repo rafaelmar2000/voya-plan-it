@@ -153,7 +153,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
 
       {/* Modal */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="bg-background border-border/50 max-w-lg p-0 gap-0 overflow-hidden overflow-x-hidden">
+        <DialogContent className="bg-background border-border/50 w-[95vw] max-w-lg p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-0 text-left">
             <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">
               {hotel.name}
@@ -166,7 +166,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             )}
           </DialogHeader>
 
-          <ScrollArea className="h-[70vh]">
+          <ScrollArea className="h-[70vh] w-full">
             <div className="space-y-6 px-6 pb-6 pt-4">
               {/* Image */}
               <div className="rounded-lg overflow-hidden">
@@ -240,7 +240,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                       <div className="space-y-2">
                         {providers.map((p, i) => (
                           <a key={i} href={p.link} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group">
+                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group overflow-hidden">
                             <div className="flex items-center gap-2">
                               <div className="flex flex-col">
                                 <span className="text-sm text-foreground font-medium flex items-center gap-1.5">
@@ -252,7 +252,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                               <span className="text-sm font-bold text-primary">{p.price}<span className="text-xs font-normal text-muted-foreground">/noite</span></span>
                               <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                             </div>
