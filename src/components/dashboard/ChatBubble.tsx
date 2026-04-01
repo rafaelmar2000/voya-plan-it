@@ -17,21 +17,24 @@ function renderMarkdownBold(text: string): React.ReactNode[] {
 }
 
 function extractCategory(hotel: ParsedHotel): string {
-  // 1. Tenta CATEGORIA: no detailsText
-  const catDetail = hotel.detailsText.match(/CATEGORIA:\s*([^\n]+)/);
-  if (catDetail && catDetail[1].trim() !== "Restaurante" && catDetail[1].trim() !== "Atração") {
-    return catDetail[1].trim();
+  // 1. Tenta CATEGORIA: no detailsText (campo explícito)
+  const catMatch = hotel.detailsText.match(/CATEGORIA:\s*([^\n\r]+)/);
+  if (catMatch) {
+    const cat = catMatch[1].trim();
+    if (cat && cat !== "Restaurante" && cat !== "Atração" && cat !== "Hotel" && cat !== "Voo") {
+      return cat;
+    }
   }
-  // 2. Tenta TIPO: no detailsText
-  const tipoDetail = hotel.detailsText.match(/TIPO:\s*([^\n]+)/);
-  if (tipoDetail) return tipoDetail[1].trim();
-  // 3. Tenta extrair da description — pega o último segmento após "|"
-  const pipes = hotel.description.split("|");
-  if (pipes.length >= 3) return pipes[pipes.length - 1].trim();
-  // 4. Fallback
-  return hotel.badge !== "Recomendado pelo Voya" && hotel.badge !== "Spot Recomendado"
-    ? hotel.badge
-    : "Geral";
+  // 2. Tenta extrair do RESUMO — último segmento após "|"
+  const resumeParts = hotel.description.split("|");
+  if (resumeParts.length >= 3) {
+    const last = resumeParts[resumeParts.length - 1].trim();
+    if (last.length > 2) return last;
+  }
+  // 3. Tenta TIPO:
+  const tipoMatch = hotel.detailsText.match(/TIPO:\s*([^\n\r]+)/);
+  if (tipoMatch) return tipoMatch[1].trim();
+  return "Geral";
 }
 
 function groupByCategory(items: ParsedHotel[]): Record<string, ParsedHotel[]> {
@@ -71,6 +74,11 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
   const flights = hotels.filter((h) => h.kind === "flight");
   const hotelItems = hotels.filter((h) => h.kind === "hotel" || h.kind === "generic");
   const attractionItems = hotels.filter((h) => h.kind === "attraction");
+
+  hotels.filter(h => h.kind === "attraction").forEach(h => {
+    console.log("ATTRACTION detailsText:", h.name, "|||", h.detailsText.slice(0, 200));
+    console.log("ATTRACTION description:", h.description);
+  });
 
   const attractionGroups = groupByCategory(attractionItems);
 
