@@ -228,42 +228,44 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                 </div>
               )}
 
-              {/* Tipos de quarto */}
-              {rooms.length > 0 && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <BedDouble className="w-4 h-4 text-primary" />
-                      <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Tipos de Quarto</h5>
+              {/* Onde Reservar */}
+              {(() => {
+                const providers = parseProviders(hotel.detailsText);
+                if (providers.length === 0) return null;
+                return (
+                  <>
+                    <Separator className="bg-border/40" />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4 text-primary" />
+                        <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Onde Reservar</h5>
+                      </div>
+                      <div className="space-y-2">
+                        {providers.map((p, i) => (
+                          <a key={i} href={p.link} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group">
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-foreground font-medium flex items-center gap-1.5">
+                                  {p.name}
+                                  {p.official && <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm">OFICIAL</span>}
+                                </span>
+                                {p.freeCancellation && (
+                                  <span className="text-[10px] text-emerald-400">Cancelamento grátis</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-primary">{p.price}<span className="text-xs font-normal text-muted-foreground">/noite</span></span>
+                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      {rooms.map((room, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setSelectedRoom(selectedRoom?.name === room.name ? null : room)}
-                          className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all ${
-                            selectedRoom?.name === room.name
-                              ? "border-primary bg-primary/10"
-                              : "border-border/40 hover:border-primary/40 hover:bg-muted/30"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <BedDouble className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">{room.name}</span>
-                          </div>
-                          <span className="text-sm font-semibold text-primary">{room.price}<span className="text-xs text-muted-foreground font-normal">/noite</span></span>
-                        </button>
-                      ))}
-                    </div>
-                    {selectedRoom && (
-                      <p className="text-xs text-primary/80 text-center">
-                        Quarto selecionado: {selectedRoom.name}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
+                  </>
+                );
+              })()}
 
               <Separator className="bg-border/40" />
 
