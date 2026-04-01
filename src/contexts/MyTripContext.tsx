@@ -16,6 +16,8 @@ interface MyTripContextValue {
   getItem: (name: string) => TripItem | undefined;
   totalBudget: number;
   clearTrip: () => void;
+  onItemAdded?: (item: TripItem) => void;
+  setOnItemAdded: (cb: (item: TripItem) => void) => void;
 }
 
 const MyTripContext = createContext<MyTripContextValue | null>(null);
