@@ -36,7 +36,12 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   }, [flight.description, flight.detailsText, flight.name]);
 
   const logo = flight.photoUrl;
-  const flightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(flight.name + " " + flight.description)}`;
+  const flightsUrl = (() => {
+    if (origin && destination) {
+      return `https://www.google.com/travel/flights#flt=${origin}.${destination};c:BRL;e:1;sd:1;t:f`;
+    }
+    return `https://www.google.com/travel/flights`;
+  })();
 
   const routeMatch = flight.description.match(/([A-Z]{3})\s*[✈️➡→\-]+\s*([A-Z]{3})/);
   const origin = routeMatch?.[1] ?? "";
