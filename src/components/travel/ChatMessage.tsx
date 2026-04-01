@@ -31,9 +31,9 @@ const ChatMessage = ({ role, content, children, isTyping }: ChatMessageProps) =>
       >
         <div
           className={cn(
-            "inline-block rounded-lg px-4 py-3 text-sm leading-relaxed",
+            "inline-block rounded-lg px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap",
             isAssistant
-              ? "bg-card border border-border text-foreground"
+              ? "bg-card border-l-2 border-l-primary/50 border-t border-r border-b border-border text-foreground"
               : "bg-primary text-primary-foreground"
           )}
         >
