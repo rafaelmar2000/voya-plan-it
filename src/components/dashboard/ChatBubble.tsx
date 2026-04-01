@@ -39,8 +39,10 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
     ? parseHotelsFromText(cleanContent)
     : { introText: cleanContent, hotels: [] };
 
+  console.log("PARSED hotels:", hotels.length, hotels.map(h => ({name: h.name, kind: h.kind})));
+
   const flights = hotels.filter((h) => h.kind === "flight");
-  const nonFlights = hotels.filter((h) => h.kind !== "flight" && h.kind !== "attraction");
+  const nonFlights = hotels.filter((h) => h.kind !== "flight");
 
   const handleCuisineConfirm = (selected: string[]) => {
     if (!onSend) return;
@@ -98,9 +100,19 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
           </div>
         )}
 
-        {nonFlights.length > 0 && (
+        {/* Hotéis */}
+        {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").length > 0 && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {nonFlights.map((hotel, i) => (
+            {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").map((hotel, i) => (
+              <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Atrações e Restaurantes */}
+        {nonFlights.filter(h => h.kind === "attraction").length > 0 && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {nonFlights.filter(h => h.kind === "attraction").map((hotel, i) => (
               <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
             ))}
           </div>
