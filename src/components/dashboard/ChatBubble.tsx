@@ -1,9 +1,10 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, Compass } from "lucide-react";
 import { parseHotelsFromText } from "@/lib/parseHotels";
 import HotelSuggestionCard from "@/components/dashboard/HotelSuggestionCard";
 import FlightTicketCard from "@/components/dashboard/FlightTicketCard";
 import CuisineSelector from "@/components/dashboard/CuisineSelector";
-import React from "react";
+import AttractionSelector from "@/components/dashboard/AttractionSelector";
+import React, { useState } from "react";
 
 function renderMarkdownBold(text: string): React.ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -24,16 +25,22 @@ interface ChatBubbleProps {
 
 const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBubbleProps) => {
   const isUser = role === "user";
+  const [showAttractionSelector, setShowAttractionSelector] = useState(false);
+  const [attractionConfirmed, setAttractionConfirmed] = useState(false);
 
   const hasCuisineSelector = !isUser && content.includes("[SELECAO_CULINARIA]");
-  const cleanContent = content.replace("[SELECAO_CULINARIA]", "").trim();
+  const hasAttractionButton = !isUser && content.includes("[BOTAO_ATRACOES]");
+  const cleanContent = content
+    .replace("[SELECAO_CULINARIA]", "")
+    .replace("[BOTAO_ATRACOES]", "")
+    .trim();
 
   const { introText, hotels } = !isUser
     ? parseHotelsFromText(cleanContent)
     : { introText: cleanContent, hotels: [] };
 
   const flights = hotels.filter((h) => h.kind === "flight");
-  const nonFlights = hotels.filter((h) => h.kind !== "flight");
+  const nonFlights = hotels.filter((h) => h.kind !== "flight" && h.kind !== "attraction");
 
   const handleCuisineConfirm = (selected: string[]) => {
     if (!onSend) return;
@@ -43,6 +50,19 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
       onSend("Sem preferência de culinária, pode sugerir qualquer tipo.");
     }
   };
+
+  const handleAttractionConfirm = (selected: string[]) => {
+    if (!onSend) return;
+    setAttractionConfirmed(true);
+    if (selected.length > 0) {
+      onSend(`Quero ver atrações nas seguintes categorias: ${selected.join(", ")}`);
+    } else {
+      onSend("Sem preferência de atrações, pode sugerir as mais populares.");
+    }
+  };
+
+  const cidadeMatch = cleanContent.match(/em\s+([A-Za-zÀ-ú\s]+?)[\.,!]/i);
+  const cidade = cidadeMatch?.[1]?.trim() || "destino";
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
@@ -84,6 +104,24 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
               <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
             ))}
           </div>
+        )}
+
+        {hasAttractionButton && !showAttractionSelector && !attractionConfirmed && (
+          <button
+            onClick={() => setShowAttractionSelector(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium hover:bg-primary/15 transition-all w-full mt-2"
+          >
+            <Compass className="w-4 h-4" />
+            Explorar Atrações em {cidade} →
+          </button>
+        )}
+
+        {showAttractionSelector && !attractionConfirmed && (
+          <AttractionSelector onConfirm={handleAttractionConfirm} />
+        )}
+
+        {attractionConfirmed && (
+          <div className="text-xs text-muted-foreground mt-2">✓ Preferências de atrações registradas</div>
         )}
 
         {children && <div className="mt-3 space-y-3">{children}</div>}
