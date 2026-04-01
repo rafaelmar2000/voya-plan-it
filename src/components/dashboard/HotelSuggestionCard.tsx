@@ -187,7 +187,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     Preço estimado
                   </p>
                   <span className="text-3xl font-bold text-primary tracking-tight">
-                    {selectedRoom ? selectedRoom.price : hotel.price}
+                    {hotel.price}
                   </span>
                   <span className="text-sm text-muted-foreground ml-1">/noite</span>
                 </div>
