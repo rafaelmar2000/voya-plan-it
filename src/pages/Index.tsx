@@ -13,6 +13,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   cards?: React.ReactNode;
+  isTyping?: boolean;
 }
 
 const DEMO_FLIGHTS = [
