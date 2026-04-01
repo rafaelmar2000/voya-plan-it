@@ -55,13 +55,25 @@ function parseFlightCards(text: string): { cards: ParsedFlight[]; cleanText: str
     const resumo = get("RESUMO");
     const timeMatch = resumo.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
     const iataMatch = resumo.match(/([A-Z]{3})\s*✈️?\s*([A-Z]{3})/);
-    const stopsMatch = resumo.match(/\|\s*([^|]+)$/);
     const durationMatch = detailsText.match(/(\d+h\s*\d*m?i?n?)/i);
 
+    // Extrai stops do RESUMO primeiro (mais confiável)
+    const resumoStopsMatch = resumo.match(/\|\s*(Direto|(\d+)\s*parada[s]?[^|]*)\s*$/i);
     const logistica = getDetail("LOGÍSTICA") || "";
-    const isDirectFlight = /direto|sem parada|nonstop/i.test(logistica);
-    const parasMatch = logistica.match(/(\d+)\s*parada/i);
-    const stops = isDirectFlight ? "Direto" : parasMatch ? `${parasMatch[1]} parada(s)` : stopsMatch ? stopsMatch[1].trim() : "Ver detalhes";
+    const isDirectFlight = /\bDireto\b/i.test(resumo) || /sem parada|nonstop/i.test(logistica);
+    const parasMatch = logistica.match(/(\d+)\s*parada/i) || resumo.match(/(\d+)\s*parada/i);
+    const escalasMatch = logistica.match(/escala|conexão|layover/i);
+
+    let stops = "Ver detalhes";
+    if (isDirectFlight) {
+      stops = "Direto";
+    } else if (parasMatch) {
+      stops = `${parasMatch[1]} parada(s)`;
+    } else if (escalasMatch) {
+      stops = "1 parada";
+    } else if (resumoStopsMatch) {
+      stops = resumoStopsMatch[1].trim();
+    }
 
     cards.push({
       airline: get("NOME"),
