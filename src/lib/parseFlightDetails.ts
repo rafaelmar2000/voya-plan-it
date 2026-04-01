@@ -81,6 +81,15 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
     connections.push({ city: airportMatch ? airportMatch[1] : "Conexão", waitTime: "Ver detalhes" });
   }
 
+  // Remove duplicatas pelo código IATA ou primeiras 5 letras da cidade
+  const uniqueConnections = connections.filter((conn, index, self) =>
+    index === self.findIndex((c) =>
+      c.city.slice(0, 5).toLowerCase() === conn.city.slice(0, 5).toLowerCase()
+    )
+  );
+  connections.length = 0;
+  uniqueConnections.forEach(c => connections.push(c));
+
   const hasDirectKeyword = /\bdireto\b/i.test(combined);
   const hasStopKeyword = /escala|parada|conex[ãa]o/i.test(combined);
   const isDirect = hasDirectKeyword && !hasStopKeyword;
