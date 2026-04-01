@@ -52,21 +52,44 @@ const Index = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     setStarted(true);
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
     const typingId = (Date.now() + 1).toString();
     const typingMsg: Message = { id: typingId, role: "assistant", content: "", isTyping: true };
+
     setMessages((prev) => [...prev, userMsg, typingMsg]);
 
-    setTimeout(() => {
-      const assistantMsg: Message = {
-        id: typingId,
-        role: "assistant",
-        content: "Entendido. Deixe-me localizar as melhores opções para essa rota. Uma pergunta: qual é a faixa de orçamento que você tem em mente para a viagem completa (voo + hospedagem)?",
-      };
-      setMessages((prev) => prev.map((m) => (m.id === typingId ? assistantMsg : m)));
-    }, 1200);
+    try {
+      const allMessages = [...messages, userMsg].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const response = await fetch("https://neat-dove-89.rafaelmar2000.deno.net", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: allMessages }),
+      });
+
+      const data = await response.json();
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === typingId
+            ? { ...m, content: data.content, isTyping: false }
+            : m
+        )
+      );
+    } catch (error) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === typingId
+            ? { ...m, content: "Ops! Problema de conexão. Tente novamente.", isTyping: false }
+            : m
+        )
+      );
+    }
   };
 
   // Landing view
