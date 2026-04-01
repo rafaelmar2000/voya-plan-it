@@ -4,9 +4,10 @@ interface ChatMessageProps {
   role: "user" | "assistant";
   content: string;
   children?: React.ReactNode;
+  isTyping?: boolean;
 }
 
-const ChatMessage = ({ role, content, children }: ChatMessageProps) => {
+const ChatMessage = ({ role, content, children, isTyping }: ChatMessageProps) => {
   const isAssistant = role === "assistant";
 
   return (
@@ -36,7 +37,15 @@ const ChatMessage = ({ role, content, children }: ChatMessageProps) => {
               : "bg-primary text-primary-foreground"
           )}
         >
-          {content}
+          {isTyping ? (
+            <div className="flex gap-1 items-center py-1">
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          ) : (
+            content
+          )}
         </div>
         {children && <div className="mt-3">{children}</div>}
       </div>
