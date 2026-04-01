@@ -19,8 +19,10 @@ interface Message {
 interface ParsedFlight {
   airline: string;
   price: string;
+  priceEconomy: string;
+  priceBusiness: string;
   resumo: string;
-  detalhes: string;
+  stopsDetail: string;
   logoUrl?: string;
   departure: string;
   arrival: string;
