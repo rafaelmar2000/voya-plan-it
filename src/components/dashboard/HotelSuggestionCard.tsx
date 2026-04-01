@@ -48,7 +48,7 @@ interface HotelSuggestionCardProps { hotel: ParsedHotel; index: number; }
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<null>(null);
+  
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
   const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
