@@ -19,8 +19,10 @@ interface Message {
 interface ParsedFlight {
   airline: string;
   price: string;
+  priceEconomy: string;
+  priceBusiness: string;
   resumo: string;
-  detalhes: string;
+  stopsDetail: string;
   logoUrl?: string;
   departure: string;
   arrival: string;
@@ -54,21 +56,27 @@ function parseFlightCards(text: string): { cards: ParsedFlight[]; cleanText: str
     const timeMatch = resumo.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
     const iataMatch = resumo.match(/([A-Z]{3})\s*✈️?\s*([A-Z]{3})/);
     const stopsMatch = resumo.match(/\|\s*([^|]+)$/);
-    const flightMatch = resumo.match(/Voo\s+([A-Z0-9]+)/i);
     const durationMatch = detailsText.match(/(\d+h\s*\d*m?i?n?)/i);
+
+    const logistica = getDetail("LOGÍSTICA") || "";
+    const isDirectFlight = /direto|sem parada|nonstop/i.test(logistica);
+    const parasMatch = logistica.match(/(\d+)\s*parada/i);
+    const stops = isDirectFlight ? "Direto" : parasMatch ? `${parasMatch[1]} parada(s)` : stopsMatch ? stopsMatch[1].trim() : "Ver detalhes";
 
     cards.push({
       airline: get("NOME"),
       price: get("PRECO"),
+      priceEconomy: getDetail("PRECO_ECONOMICA") || get("PRECO"),
+      priceBusiness: getDetail("PRECO_EXECUTIVA") || "Sob consulta",
       resumo,
-      detalhes: detailsText,
+      stopsDetail: logistica,
       logoUrl: get("FOTO") || undefined,
       departure: iataMatch ? iataMatch[1] : "",
       arrival: iataMatch ? iataMatch[2] : "",
       departureTime: timeMatch ? timeMatch[1] : "",
       arrivalTime: timeMatch ? timeMatch[2] : "",
       duration: durationMatch ? durationMatch[1] : "",
-      stops: stopsMatch ? stopsMatch[1].trim() : "Ver detalhes",
+      stops,
     });
   }
 
@@ -132,7 +140,10 @@ const Index = () => {
               arrivalTime={f.arrivalTime}
               duration={f.duration}
               price={f.price}
+              priceEconomy={f.priceEconomy}
+              priceBusiness={f.priceBusiness}
               stops={f.stops}
+              stopsDetail={f.stopsDetail}
               logoUrl={f.logoUrl}
             />
           ))}
