@@ -289,9 +289,28 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
 
               <Separator className="bg-border/40" />
 
-              <div className="space-y-3">
-                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Análise do Voya</h5>
-                <div className="text-[15px] text-muted-foreground/90 leading-[1.85] whitespace-pre-line">{flight.detailsText}</div>
+              <div className="space-y-2">
+                <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Detalhes do Voo</h5>
+                {flight.detailsText
+                  .split("\n")
+                  .filter((line) => line.trim())
+                  .map((line, i) => {
+                    if (/^(PRECO_|PREÇO_|LOGÍSTICA:|LOGISTICA:)/i.test(line.trim())) return null;
+                    return (
+                      <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                        {line}
+                      </p>
+                    );
+                  })}
+                {(() => {
+                  const logMatch = flight.detailsText.match(/LOG[ÍI]STICA:\s*(.+)/i);
+                  return logMatch ? (
+                    <div className="mt-2 p-3 rounded-lg bg-muted/30 border border-border/40">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Logística</p>
+                      <p className="text-sm text-foreground/80">{logMatch[1]}</p>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {/* Select for trip */}
