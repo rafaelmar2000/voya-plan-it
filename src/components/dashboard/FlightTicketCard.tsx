@@ -43,7 +43,7 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const hasRoute = origin && destination;
 
   const flightsUrl = (origin && destination)
-    ? `https://www.skyscanner.com.br/transporte-aereo/${origin}/${destination}`
+    ? `https://www.skyscanner.com.br/passagens-aereas/${origin}-sky/${destination}-sky/`
     : `https://www.skyscanner.com.br`;
 
   // Get price for the currently selected class
