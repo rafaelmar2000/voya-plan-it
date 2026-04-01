@@ -29,7 +29,7 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
   const combined = `${description}\n${detailsText}`;
 
   // Flight number
-  const flightNumMatch = combined.match(/(?:voo|flight|n[úu]mero)?\s*(?:#?\s*)?([A-Z]{2,5}\s?\d{2,5})/i);
+  const flightNumMatch = combined.match(/\bVoo\s+([A-Z]{1,2}\s?\d{3,5})\b/i);
   const flightNumber = flightNumMatch ? flightNumMatch[1].trim() : "";
 
   // Schedule
