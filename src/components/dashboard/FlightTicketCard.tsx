@@ -42,9 +42,19 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const destination = routeMatch?.[2] ?? "";
   const hasRoute = origin && destination;
 
-  const flightsUrl = (origin && destination)
-    ? `https://www.skyscanner.com.br/transporte-aereo/${origin.toLowerCase()}/${destination.toLowerCase()}/`
-    : `https://www.skyscanner.com.br`;
+  const flightsUrl = (() => {
+    if (origin && destination) {
+      const dateMatch = flight.detailsText.match(/(\d{4})-(\d{2})-(\d{2})/) ||
+                        flight.description.match(/(\d{4})-(\d{2})-(\d{2})/);
+      const dateFormatted = dateMatch
+        ? `${dateMatch[1].slice(2)}${dateMatch[2]}${dateMatch[3]}`
+        : "";
+      const dateParam = dateFormatted ? `/${dateFormatted}` : "";
+      const cabinClass = selectedClass === "Executiva" ? "business" : "economy";
+      return `https://www.skyscanner.com.br/transporte/passagens-aereas/${origin.toLowerCase()}/${destination.toLowerCase()}${dateParam}/?adultsv2=1&cabinclass=${cabinClass}&childrenv2=&ref=home&rtn=0&outboundaltsenabled=false`;
+    }
+    return `https://www.skyscanner.com.br`;
+  })();
 
   // Get price for the currently selected class
   const activeClassPrice: FlightClassPrice | undefined = meta.classPrices.find(
