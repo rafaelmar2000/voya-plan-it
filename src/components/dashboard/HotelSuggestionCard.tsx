@@ -160,8 +160,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             </DialogTitle>
             {hotel.location && (
               <DialogDescription className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                <MapPin className="w-3.5 h-3.5" />
-                {hotel.location}
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{hotel.location?.startsWith('http') ? hotel.name : hotel.location}</span>
               </DialogDescription>
             )}
           </DialogHeader>
