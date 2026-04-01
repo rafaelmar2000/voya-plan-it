@@ -45,36 +45,53 @@ export function parseFlightMeta(description: string, detailsText: string): Fligh
   // ── Connections ──
   const connections: FlightConnection[] = [];
 
-  // Pattern 1: "Conexão em Miami (2h30)" / "Escala: São Paulo - 1h45"
-  const connRegex = /(?:conex[ãa]o|escala|parada)\s*(?:em|:)?\s*([A-Za-zÀ-ú\s]+?)[\s\-–]*\(?\s*(\d+h?\s*\d*\s*(?:min)?)\s*\)?/gi;
-  let connMatch;
-  while ((connMatch = connRegex.exec(combined)) !== null) {
-    connections.push({ city: connMatch[1].trim(), waitTime: connMatch[2].trim() });
-  }
-
-  // Pattern 2: Bullet/numbered list under CONEXÕES header
-  // e.g. "CONEXÕES:\n- Miami (MIA): 2h30 de espera\n- Bogotá (BOG): 1h45"
-  const connSectionMatch = combined.match(/CONEX[ÕO]ES\s*:?\s*\n([\s\S]*?)(?=\n\s*(?:[A-Z_]{4,}|$))/i);
-  if (connSectionMatch) {
-    const lines = connSectionMatch[1].split("\n");
-    for (const line of lines) {
-      const lineMatch = line.match(/[-•*]\s*(.+?)\s*[:\-–]\s*(\d+h?\s*\d*\s*(?:min)?)/i);
-      if (lineMatch) {
-        const city = lineMatch[1].replace(/\([A-Z]{3}\)/g, "").trim();
-        if (!connections.some((c) => c.city.toLowerCase() === city.toLowerCase())) {
-          connections.push({ city, waitTime: lineMatch[2].trim() });
-        }
-      }
+  // Pattern 1: "Escala em PTY (Aeroporto X) por 48m"
+  const connRegex1 = /(?:escala|conex[ãa]o|parada)\s*(?:em|:)?\s*([A-Za-zÀ-ú\s\(\)]+?)(?:por|com espera de|durante|[\-–])\s*(\d+h?\s*\d*\s*(?:min|m)?)/gi;
+  let connMatch1;
+  while ((connMatch1 = connRegex1.exec(combined)) !== null) {
+    const city = connMatch1[1].replace(/\(.*?\)/g, "").trim();
+    if (city.length > 1) {
+      connections.push({ city, waitTime: connMatch1[2].trim() });
     }
   }
 
-  const isDirect = /\bdireto\b/i.test(combined) && connections.length === 0;
+  // Pattern 2: "1 parada em PTY" ou "1 parada em Aeroporto Tocumen"
+  const connRegex2 = /\d+\s*parada[s]?\s*(?:em|via)?\s*([A-Za-zÀ-ú\s\(\)]{3,40})/gi;
+  let connMatch2;
+  while ((connMatch2 = connRegex2.exec(combined)) !== null) {
+    const city = connMatch2[1].replace(/\(.*?\)/g, "").trim();
+    if (city.length > 1 && !connections.some(c => c.city.toLowerCase().includes(city.toLowerCase().slice(0, 5)))) {
+      connections.push({ city, waitTime: "—" });
+    }
+  }
+
+  // Pattern 3: formato "PTY (Aeroporto Internacional Tocumen) com espera de 0h48m"
+  const connRegex3 = /([A-Z]{3})\s*\(([^)]+)\)\s*(?:com espera de|por)\s*(\d+h?\s*\d*\s*(?:min|m)?)/gi;
+  let connMatch3;
+  while ((connMatch3 = connRegex3.exec(combined)) !== null) {
+    const city = `${connMatch3[2]} (${connMatch3[1]})`;
+    if (!connections.some(c => c.city.includes(connMatch3![1]))) {
+      connections.push({ city, waitTime: connMatch3[3].trim() });
+    }
+  }
+
+  // Se ainda não encontrou conexões mas o texto menciona escala/parada, adiciona genérico
+  if (connections.length === 0 && /escala|parada|conex[ãa]o/i.test(combined) && !/sem parada|nonstop/i.test(combined)) {
+    const airportMatch = combined.match(/(?:em|via|airport)\s+([A-Z]{3})\b/);
+    connections.push({ city: airportMatch ? airportMatch[1] : "Conexão", waitTime: "Ver detalhes" });
+  }
+
+  const hasDirectKeyword = /\bdireto\b/i.test(combined);
+  const hasStopKeyword = /escala|parada|conex[ãa]o/i.test(combined);
+  const isDirect = hasDirectKeyword && !hasStopKeyword;
   const connectionCount = connections.length;
-  const connectionLabel = isDirect || connectionCount === 0
+  const connectionLabel = isDirect
     ? "Direto"
     : connectionCount === 1
       ? "1 Conexão"
-      : `${connectionCount} Conexões`;
+      : connectionCount > 1
+        ? `${connectionCount} Conexões`
+        : hasStopKeyword ? "Com Escala" : "Direto";
 
   // ── Class prices ──
   const classPrices: FlightClassPrice[] = [];
