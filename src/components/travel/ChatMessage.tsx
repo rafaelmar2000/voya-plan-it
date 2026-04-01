@@ -18,7 +18,7 @@ const ChatMessage = ({ role, content, children, isTyping }: ChatMessageProps) =>
       )}
     >
       {isAssistant && (
-        <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 mt-1">
+        <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 mt-1">
           <span className="text-xs font-display font-bold text-primary">V</span>
         </div>
       )}
