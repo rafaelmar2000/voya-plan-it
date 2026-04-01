@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, MapPin, Sparkles, Check, BedDouble } from "lucide-react";
+import { ExternalLink, MapPin, Sparkles, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -14,18 +14,26 @@ import { useMyTrip } from "@/contexts/MyTripContext";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
 
-interface Room { name: string; price: string; }
+interface Provider { name: string; price: string; link: string; freeCancellation: boolean; official: boolean; }
 
-function parseRooms(detailsText: string): Room[] {
-  const rooms: Room[] = [];
-  const quartosSectionMatch = detailsText.match(/QUARTOS:([\s\S]*?)(?=\n[A-Z_]+:|$)/);
-  if (!quartosSectionMatch) return rooms;
-  const lines = quartosSectionMatch[1].split("\n");
+function parseProviders(detailsText: string): Provider[] {
+  const providers: Provider[] = [];
+  const section = detailsText.match(/RESERVAS:([\s\S]*?)(?=\n[A-Z_]+:|$)/);
+  if (!section) return providers;
+  const lines = section[1].split("\n").filter(l => l.includes("RESERVA_"));
   for (const line of lines) {
-    const match = line.match(/QUARTO_\d+:\s*(.+?)\s*\|\s*(.+)/);
-    if (match) rooms.push({ name: match[1].trim(), price: match[2].trim() });
+    const match = line.match(/RESERVA_\d+:\s*(.+?)\s*\|\s*([^|]+)\s*\|?([^|]*)\|\s*LINK:\s*(.+)/);
+    if (match) {
+      providers.push({
+        name: match[1].trim(),
+        price: match[2].trim(),
+        freeCancellation: match[3].toLowerCase().includes("cancelamento"),
+        link: match[4].trim(),
+        official: match[1].toLowerCase().includes("oficial") || match[3].toLowerCase().includes("oficial"),
+      });
+    }
   }
-  return rooms;
+  return providers;
 }
 
 function cleanDetailsText(detailsText: string): string {
@@ -40,14 +48,14 @@ interface HotelSuggestionCardProps { hotel: ParsedHotel; index: number; }
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
   const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
   const selected = isSelected(hotel.name);
   const tripItem = getItem(hotel.name);
-  const rooms = parseRooms(hotel.detailsText);
+  
 
   const getDetail = (key: string) => {
     const m = hotel.detailsText.match(new RegExp(`${key}:\\s*([^\\n]+)`));
@@ -58,10 +66,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
     e.stopPropagation();
     if (selected && tripItem) removeItem(tripItem.id);
     else {
-      const hotelWithRoom = selectedRoom
-        ? { ...hotel, price: selectedRoom.price }
-        : hotel;
-      addItem(hotelWithRoom);
+      addItem(hotel);
     }
   };
 
@@ -89,7 +94,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             </Badge>
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
-            <span className="text-sm font-bold text-primary">{selectedRoom ? selectedRoom.price : hotel.price}</span>
+            <span className="text-sm font-bold text-primary">{hotel.price}</span>
             <span className="text-[10px] text-muted-foreground ml-1">/noite</span>
           </div>
         </div>
@@ -182,7 +187,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     Preço estimado
                   </p>
                   <span className="text-3xl font-bold text-primary tracking-tight">
-                    {selectedRoom ? selectedRoom.price : hotel.price}
+                    {hotel.price}
                   </span>
                   <span className="text-sm text-muted-foreground ml-1">/noite</span>
                 </div>
@@ -220,42 +225,44 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                 </div>
               )}
 
-              {/* Tipos de quarto */}
-              {rooms.length > 0 && (
-                <>
-                  <Separator className="bg-border/40" />
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <BedDouble className="w-4 h-4 text-primary" />
-                      <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Tipos de Quarto</h5>
+              {/* Onde Reservar */}
+              {(() => {
+                const providers = parseProviders(hotel.detailsText);
+                if (providers.length === 0) return null;
+                return (
+                  <>
+                    <Separator className="bg-border/40" />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4 text-primary" />
+                        <h5 className="text-sm font-semibold text-primary uppercase tracking-widest">Onde Reservar</h5>
+                      </div>
+                      <div className="space-y-2">
+                        {providers.map((p, i) => (
+                          <a key={i} href={p.link} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 rounded-lg border border-border/40 hover:border-primary/50 hover:bg-muted/30 transition-all group">
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-sm text-foreground font-medium flex items-center gap-1.5">
+                                  {p.name}
+                                  {p.official && <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-sm">OFICIAL</span>}
+                                </span>
+                                {p.freeCancellation && (
+                                  <span className="text-[10px] text-emerald-400">Cancelamento grátis</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-primary">{p.price}<span className="text-xs font-normal text-muted-foreground">/noite</span></span>
+                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </div>
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      {rooms.map((room, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setSelectedRoom(selectedRoom?.name === room.name ? null : room)}
-                          className={`w-full flex items-center justify-between p-3 rounded-lg border text-left transition-all ${
-                            selectedRoom?.name === room.name
-                              ? "border-primary bg-primary/10"
-                              : "border-border/40 hover:border-primary/40 hover:bg-muted/30"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <BedDouble className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground">{room.name}</span>
-                          </div>
-                          <span className="text-sm font-semibold text-primary">{room.price}<span className="text-xs text-muted-foreground font-normal">/noite</span></span>
-                        </button>
-                      ))}
-                    </div>
-                    {selectedRoom && (
-                      <p className="text-xs text-primary/80 text-center">
-                        Quarto selecionado: {selectedRoom.name}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
+                  </>
+                );
+              })()}
 
               <Separator className="bg-border/40" />
 
@@ -269,7 +276,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                 }`}
               >
                 <Check className="w-4 h-4" />
-                {selected ? "Selecionado" : `Adicionar ao Roteiro${selectedRoom ? ` — ${selectedRoom.name}` : ""}`}
+                {selected ? "Selecionado" : "Adicionar ao Roteiro"}
               </button>
 
               <a
