@@ -59,7 +59,7 @@ const HeroSection = ({ onSend }: HeroSectionProps) => {
 
         <p
           ref={subtitleRef}
-          className="text-muted-foreground text-sm sm:text-base mb-10 max-w-lg mx-auto tracking-wide"
+          className="text-white/70 drop-shadow-lg text-sm sm:text-base mb-10 max-w-lg mx-auto tracking-wide"
           style={{ opacity: 0 }}
         >
           Seu estrategista de viagens com inteligência artificial.
