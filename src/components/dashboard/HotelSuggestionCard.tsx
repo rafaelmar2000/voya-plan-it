@@ -110,11 +110,20 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             )}
           </div>
 
-          {hotel.description && (
-            <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
-              {hotel.description}
-            </p>
-          )}
+          {hotel.description && (() => {
+            const ratingMatch = hotel.description.match(/[\d.]+/);
+            const ratingNum = ratingMatch ? Number(ratingMatch[0]) : null;
+            return (
+              <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                {ratingNum !== null && (
+                  <span className={`font-medium mr-1 ${
+                    ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
+                  }`}>★ {ratingNum.toFixed(1)}</span>
+                )}
+                {hotel.description}
+              </p>
+            );
+          })()}
 
           <div className="flex gap-2 pt-1">
             <Button
