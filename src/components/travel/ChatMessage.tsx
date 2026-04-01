@@ -18,7 +18,7 @@ const ChatMessage = ({ role, content, children, isTyping }: ChatMessageProps) =>
       )}
     >
       {isAssistant && (
-        <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 mt-1">
+        <div className="w-8 h-8 rounded-sm bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0 mt-1">
           <span className="text-xs font-display font-bold text-primary">V</span>
         </div>
       )}
@@ -31,9 +31,9 @@ const ChatMessage = ({ role, content, children, isTyping }: ChatMessageProps) =>
       >
         <div
           className={cn(
-            "inline-block rounded-lg px-4 py-3 text-sm leading-relaxed",
+            "inline-block rounded-lg px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap",
             isAssistant
-              ? "bg-card border border-border text-foreground"
+              ? "bg-card border-l-2 border-l-primary/50 border-t border-r border-b border-border text-foreground"
               : "bg-primary text-primary-foreground"
           )}
         >
