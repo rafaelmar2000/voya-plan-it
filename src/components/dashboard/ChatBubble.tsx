@@ -39,8 +39,10 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
     ? parseHotelsFromText(cleanContent)
     : { introText: cleanContent, hotels: [] };
 
+  console.log("PARSED hotels:", hotels.length, hotels.map(h => ({name: h.name, kind: h.kind})));
+
   const flights = hotels.filter((h) => h.kind === "flight");
-  const nonFlights = hotels.filter((h) => h.kind !== "flight" && h.kind !== "attraction");
+  const nonFlights = hotels.filter((h) => h.kind !== "flight");
 
   const handleCuisineConfirm = (selected: string[]) => {
     if (!onSend) return;
