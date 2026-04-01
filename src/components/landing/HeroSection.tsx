@@ -30,12 +30,16 @@ const HeroSection = ({ onSend }: HeroSectionProps) => {
   return (
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <img
-        src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80&w=2000"
-        alt="Cityscape at night with dramatic lighting"
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        poster="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=80&w=2000"
         className="absolute inset-0 w-full h-full object-cover"
-        loading="eager"
-      />
+      >
+        <source src="https://videos.pexels.com/video-files/1851190/1851190-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+      </video>
 
       {/* Dark overlays for depth */}
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
