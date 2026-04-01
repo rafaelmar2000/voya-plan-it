@@ -55,15 +55,17 @@ const Index = () => {
   const handleSend = (text: string) => {
     setStarted(true);
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    const typingId = (Date.now() + 1).toString();
+    const typingMsg: Message = { id: typingId, role: "assistant", content: "", isTyping: true };
+    setMessages((prev) => [...prev, userMsg, typingMsg]);
 
     setTimeout(() => {
       const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: typingId,
         role: "assistant",
         content: "Entendido. Deixe-me localizar as melhores opções para essa rota. Uma pergunta: qual é a faixa de orçamento que você tem em mente para a viagem completa (voo + hospedagem)?",
       };
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => prev.map((m) => (m.id === typingId ? assistantMsg : m)));
     }, 1200);
   };
 
