@@ -140,7 +140,10 @@ const Index = () => {
               arrivalTime={f.arrivalTime}
               duration={f.duration}
               price={f.price}
+              priceEconomy={f.priceEconomy}
+              priceBusiness={f.priceBusiness}
               stops={f.stops}
+              stopsDetail={f.stopsDetail}
               logoUrl={f.logoUrl}
             />
           ))}
