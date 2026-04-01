@@ -100,9 +100,19 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
           </div>
         )}
 
-        {nonFlights.length > 0 && (
+        {/* Hotéis */}
+        {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").length > 0 && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {nonFlights.map((hotel, i) => (
+            {nonFlights.filter(h => h.kind === "hotel" || h.kind === "generic").map((hotel, i) => (
+              <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
+            ))}
+          </div>
+        )}
+
+        {/* Atrações e Restaurantes */}
+        {nonFlights.filter(h => h.kind === "attraction").length > 0 && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {nonFlights.filter(h => h.kind === "attraction").map((hotel, i) => (
               <HotelSuggestionCard key={`${hotel.name}-${i}`} hotel={hotel} index={i} />
             ))}
           </div>
