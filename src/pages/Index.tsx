@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ArrowRight, Compass, Globe, MapPin } from "lucide-react";
+import { Compass, Globe, MapPin } from "lucide-react";
 import ChatMessage from "@/components/travel/ChatMessage";
 import ChatInput from "@/components/travel/ChatInput";
 import FlightCard from "@/components/travel/FlightCard";
@@ -16,16 +16,66 @@ interface Message {
   isTyping?: boolean;
 }
 
-const DEMO_FLIGHTS = [
-  { airline: "LATAM", departure: "GRU", arrival: "LIS", departureTime: "22:15", arrivalTime: "10:30", duration: "9h 15min", price: "R$ 3.450", stops: "Direto" },
-  { airline: "TAP Portugal", departure: "GRU", arrival: "LIS", departureTime: "23:50", arrivalTime: "12:05", duration: "9h 15min", price: "R$ 2.980", stops: "Direto" },
-  { airline: "Air France", departure: "GRU", arrival: "LIS", departureTime: "17:40", arrivalTime: "09:10", duration: "11h 30min", price: "R$ 2.640", stops: "1 parada (CDG)" },
-];
+interface ParsedFlight {
+  airline: string;
+  price: string;
+  resumo: string;
+  detalhes: string;
+  logoUrl?: string;
+  departure: string;
+  arrival: string;
+  departureTime: string;
+  arrivalTime: string;
+  duration: string;
+  stops: string;
+}
 
-const DEMO_HOTELS = [
-  { name: "Memmo Alfama", location: "Alfama, Lisboa", rating: 4.8, pricePerNight: "R$ 1.250", imageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80", amenities: ["wifi", "spa", "terraço"] },
-  { name: "The Lumiares", location: "Bairro Alto, Lisboa", rating: 4.7, pricePerNight: "R$ 1.680", imageUrl: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&q=80", amenities: ["wifi", "piscina", "bar"] },
-];
+// ─── PARSER RESILIENTE ────────────────────────────────────────────────────────
+function parseFlightCards(text: string): { cards: ParsedFlight[]; cleanText: string } {
+  const cards: ParsedFlight[] = [];
+  const cardRegex = /\[CATEGORIA\]:.*?Voo[\s\S]*?\[FIM\]/gi;
+  const matches = text.match(cardRegex) || [];
+
+  for (const block of matches) {
+    const get = (tag: string) => {
+      const m = block.match(new RegExp(`\\[${tag}\\]:\\s*([^\\[\\n]+)`));
+      return m ? m[1].trim() : "";
+    };
+
+    const detailsBlock = block.match(/\[DETALHES\]:([\s\S]*?)\[FIM\]/);
+    const detailsText = detailsBlock ? detailsBlock[1] : "";
+
+    const getDetail = (key: string) => {
+      const m = detailsText.match(new RegExp(`${key}:\\s*([^\\n]+)`));
+      return m ? m[1].trim() : "";
+    };
+
+    const resumo = get("RESUMO");
+    const timeMatch = resumo.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    const iataMatch = resumo.match(/([A-Z]{3})\s*✈️?\s*([A-Z]{3})/);
+    const stopsMatch = resumo.match(/\|\s*([^|]+)$/);
+    const flightMatch = resumo.match(/Voo\s+([A-Z0-9]+)/i);
+    const durationMatch = detailsText.match(/(\d+h\s*\d*m?i?n?)/i);
+
+    cards.push({
+      airline: get("NOME"),
+      price: get("PRECO"),
+      resumo,
+      detalhes: detailsText,
+      logoUrl: get("FOTO") || undefined,
+      departure: iataMatch ? iataMatch[1] : "",
+      arrival: iataMatch ? iataMatch[2] : "",
+      departureTime: timeMatch ? timeMatch[1] : "",
+      arrivalTime: timeMatch ? timeMatch[2] : "",
+      duration: durationMatch ? durationMatch[1] : "",
+      stops: stopsMatch ? stopsMatch[1].trim() : "Ver detalhes",
+    });
+  }
+
+  const cleanText = text.replace(cardRegex, "").replace(/\n{3,}/g, "\n\n").trim();
+
+  return { cards, cleanText };
+}
 
 const INITIAL_MESSAGES: Message[] = [
   {
@@ -35,17 +85,10 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
-const DEMO_CONVERSATION: Message[] = [
-  ...INITIAL_MESSAGES,
-  { id: "2", role: "user", content: "Quero ir para Lisboa em setembro, saindo de São Paulo." },
-  { id: "3", role: "assistant", content: "Setembro em Lisboa: temperatura média de 25°C, precipitação mínima. Janela ideal. Localizei 3 voos compatíveis. O mais eficiente sai às 22h15 — você dorme no trajeto e chega pronto para o check-in. Analise os cards abaixo." },
-];
-
 const Index = () => {
   const [started, setStarted] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [showDemo, setShowDemo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,11 +116,33 @@ const Index = () => {
       });
 
       const data = await response.json();
+      const rawContent: string = data.content || "";
+
+      const { cards, cleanText } = parseFlightCards(rawContent);
+
+      const cardNodes = cards.length > 0 ? (
+        <div className="space-y-3 mt-3">
+          {cards.map((f, i) => (
+            <FlightCard
+              key={`${f.airline}-${i}`}
+              airline={f.airline}
+              departure={f.departure}
+              arrival={f.arrival}
+              departureTime={f.departureTime}
+              arrivalTime={f.arrivalTime}
+              duration={f.duration}
+              price={f.price}
+              stops={f.stops}
+              logoUrl={f.logoUrl}
+            />
+          ))}
+        </div>
+      ) : undefined;
 
       setMessages((prev) =>
         prev.map((m) =>
           m.id === typingId
-            ? { ...m, content: data.content, isTyping: false }
+            ? { ...m, content: cleanText, cards: cardNodes, isTyping: false }
             : m
         )
       );
@@ -99,7 +164,6 @@ const Index = () => {
         <Header onOpenAuth={() => setAuthOpen(true)} />
         <HeroSection onSend={handleSend} />
 
-        {/* Features */}
         <div className="bg-background py-24 px-6">
           <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
             {[
@@ -133,7 +197,7 @@ const Index = () => {
           <span className="text-xs text-muted-foreground tracking-wide">Estrategista de viagens</span>
         </div>
         <button
-          onClick={() => { setStarted(false); setMessages(INITIAL_MESSAGES); setShowDemo(false); }}
+          onClick={() => { setStarted(false); setMessages(INITIAL_MESSAGES); }}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Nova viagem
@@ -145,13 +209,6 @@ const Index = () => {
           {messages.map((msg) => (
             <ChatMessage key={msg.id} role={msg.role} content={msg.content} isTyping={msg.isTyping}>
               {msg.cards}
-              {msg.id === "3" && showDemo && (
-                <div className="space-y-3">
-                  {DEMO_FLIGHTS.map((f) => (
-                    <FlightCard key={f.airline + f.departureTime} {...f} />
-                  ))}
-                </div>
-              )}
             </ChatMessage>
           ))}
           <div ref={messagesEndRef} />
