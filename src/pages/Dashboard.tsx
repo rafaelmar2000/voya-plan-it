@@ -219,13 +219,20 @@ const Dashboard = () => {
   );
 
   useEffect(() => {
+    const iataToCity: Record<string, string> = {
+      JFK: "Nova York", GRU: "São Paulo", GIG: "Rio de Janeiro",
+      LHR: "Londres", CDG: "Paris", MIA: "Miami", LIS: "Lisboa",
+      MCO: "Orlando", CUN: "Cancún", EZE: "Buenos Aires",
+      SCL: "Santiago", LAX: "Los Angeles", NRT: "Tokyo", DXB: "Dubai"
+    };
     setOnItemAdded((tripItem) => {
       if (tripItem.item.kind === "flight") {
         const descricao = tripItem.item.description || "";
         const destinoMatch = descricao.match(/[A-Z]{3}\s*[✈️➡→\->]+\s*([A-Z]{3})/);
-        const destino = destinoMatch?.[1] || "";
-        const mensagem = destino
-          ? `Adicionei o voo ${tripItem.item.name} (${tripItem.selectedClass || "Econômica"}) ao meu roteiro. Agora quero ver hotéis em ${destino}.`
+        const iata = destinoMatch?.[1] || "";
+        const cidade = iataToCity[iata] || iata;
+        const mensagem = cidade
+          ? `Adicionei o voo ${tripItem.item.name} (${tripItem.selectedClass || "Econômica"}) ao meu roteiro. Agora quero ver hotéis em ${cidade}.`
           : `Adicionei o voo ao meu roteiro. Agora quero ver opções de hospedagem.`;
         handleSend(mensagem);
       }
