@@ -14,18 +14,26 @@ import { useMyTrip } from "@/contexts/MyTripContext";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
 
-interface Room { name: string; price: string; }
+interface Provider { name: string; price: string; link: string; freeCancellation: boolean; official: boolean; }
 
-function parseRooms(detailsText: string): Room[] {
-  const rooms: Room[] = [];
-  const quartosSectionMatch = detailsText.match(/QUARTOS:([\s\S]*?)(?=\n[A-Z_]+:|$)/);
-  if (!quartosSectionMatch) return rooms;
-  const lines = quartosSectionMatch[1].split("\n");
+function parseProviders(detailsText: string): Provider[] {
+  const providers: Provider[] = [];
+  const section = detailsText.match(/RESERVAS:([\s\S]*?)(?=\n[A-Z_]+:|$)/);
+  if (!section) return providers;
+  const lines = section[1].split("\n").filter(l => l.includes("RESERVA_"));
   for (const line of lines) {
-    const match = line.match(/QUARTO_\d+:\s*(.+?)\s*\|\s*(.+)/);
-    if (match) rooms.push({ name: match[1].trim(), price: match[2].trim() });
+    const match = line.match(/RESERVA_\d+:\s*(.+?)\s*\|\s*([^|]+)\s*\|?([^|]*)\|\s*LINK:\s*(.+)/);
+    if (match) {
+      providers.push({
+        name: match[1].trim(),
+        price: match[2].trim(),
+        freeCancellation: match[3].toLowerCase().includes("cancelamento"),
+        link: match[4].trim(),
+        official: match[1].toLowerCase().includes("oficial") || match[3].toLowerCase().includes("oficial"),
+      });
+    }
   }
-  return rooms;
+  return providers;
 }
 
 function cleanDetailsText(detailsText: string): string {
