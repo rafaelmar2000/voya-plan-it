@@ -42,12 +42,9 @@ const FlightTicketCard = ({ flight }: FlightTicketCardProps) => {
   const destination = routeMatch?.[2] ?? "";
   const hasRoute = origin && destination;
 
-  const flightsUrl = (() => {
-    if (origin && destination) {
-      return `https://www.google.com/travel/flights#flt=${origin}.${destination};c:BRL;e:1;sd:1;t:f`;
-    }
-    return `https://www.google.com/travel/flights`;
-  })();
+  const flightsUrl = (origin && destination)
+    ? `https://www.google.com/travel/flights/search?tfs=CBwQAhopagwIAxIIL20vMGh4N3oSCjIwMjYtMDctMTUSCC9tLzBfNWhf`
+    : `https://www.google.com/travel/flights`;
 
   // Get price for the currently selected class
   const activeClassPrice: FlightClassPrice | undefined = meta.classPrices.find(
