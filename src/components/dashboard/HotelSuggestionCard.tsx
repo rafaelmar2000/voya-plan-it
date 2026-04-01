@@ -276,7 +276,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                 }`}
               >
                 <Check className="w-4 h-4" />
-                {selected ? "Selecionado" : `Adicionar ao Roteiro${selectedRoom ? ` — ${selectedRoom.name}` : ""}`}
+                {selected ? "Selecionado" : "Adicionar ao Roteiro"}
               </button>
 
               <a
