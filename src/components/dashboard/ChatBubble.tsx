@@ -55,9 +55,9 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
     if (!onSend) return;
     setAttractionConfirmed(true);
     if (selected.length > 0) {
-      onSend(`Quero ver atrações nas seguintes categorias: ${selected.join(", ")}`);
+      onSend(`ATRAÇÕES SELECIONADAS: Quero ver atrações nas seguintes categorias: ${selected.join(", ")}. Por favor busque atrações turísticas nessas categorias.`);
     } else {
-      onSend("Sem preferência de atrações, pode sugerir as mais populares.");
+      onSend("ATRAÇÕES SELECIONADAS: Sem preferência de categoria, mostre as atrações mais populares.");
     }
   };
 
