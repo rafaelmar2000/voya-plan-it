@@ -17,12 +17,21 @@ function renderMarkdownBold(text: string): React.ReactNode[] {
 }
 
 function extractCategory(hotel: ParsedHotel): string {
-  const m = hotel.detailsText.match(/CATEGORIA:\s*([^\n]+)/);
-  if (m) return m[1].trim();
-  const d = hotel.description.match(/\[([^\]]+)\]/);
-  if (d) return d[1].trim();
-  if (hotel.badge && hotel.badge !== "Spot Recomendado" && hotel.badge !== "Recomendado pelo Voya") return hotel.badge;
-  return "Geral";
+  // 1. Tenta CATEGORIA: no detailsText
+  const catDetail = hotel.detailsText.match(/CATEGORIA:\s*([^\n]+)/);
+  if (catDetail && catDetail[1].trim() !== "Restaurante" && catDetail[1].trim() !== "Atração") {
+    return catDetail[1].trim();
+  }
+  // 2. Tenta TIPO: no detailsText
+  const tipoDetail = hotel.detailsText.match(/TIPO:\s*([^\n]+)/);
+  if (tipoDetail) return tipoDetail[1].trim();
+  // 3. Tenta extrair da description — pega o último segmento após "|"
+  const pipes = hotel.description.split("|");
+  if (pipes.length >= 3) return pipes[pipes.length - 1].trim();
+  // 4. Fallback
+  return hotel.badge !== "Recomendado pelo Voya" && hotel.badge !== "Spot Recomendado"
+    ? hotel.badge
+    : "Geral";
 }
 
 function groupByCategory(items: ParsedHotel[]): Record<string, ParsedHotel[]> {
