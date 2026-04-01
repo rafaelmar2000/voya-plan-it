@@ -221,12 +221,17 @@ const Dashboard = () => {
   useEffect(() => {
     setOnItemAdded((tripItem) => {
       if (tripItem.item.kind === "flight") {
-        const destino = tripItem.item.description.match(/[A-Z]{3}\s*[✈️➡→\-]+\s*([A-Z]{3})/)?.[1] || "";
-        handleSend(`Selecionei o voo ${tripItem.item.name} (${tripItem.selectedClass}). Agora quero ver opções de hotéis em ${destino}.`);
+        const descricao = tripItem.item.description || "";
+        const destinoMatch = descricao.match(/[A-Z]{3}\s*[✈️➡→\->]+\s*([A-Z]{3})/);
+        const destino = destinoMatch?.[1] || "";
+        const mensagem = destino
+          ? `Adicionei o voo ${tripItem.item.name} (${tripItem.selectedClass || "Econômica"}) ao meu roteiro. Agora quero ver hotéis em ${destino}.`
+          : `Adicionei o voo ao meu roteiro. Agora quero ver opções de hospedagem.`;
+        handleSend(mensagem);
       }
     });
-  }, [handleSend, setOnItemAdded]
-  );
+    return () => setOnItemAdded(null);
+  }, [handleSend, setOnItemAdded]);
 
   // ─── New roteiro ───
   const handleNewRoteiro = () => {
