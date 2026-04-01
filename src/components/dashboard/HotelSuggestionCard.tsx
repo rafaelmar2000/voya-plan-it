@@ -166,7 +166,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             )}
           </DialogHeader>
 
-          <ScrollArea className="h-[70vh]">
+          <ScrollArea className="h-[70vh] w-full">
             <div className="space-y-6 px-6 pb-6 pt-4">
               {/* Image */}
               <div className="rounded-lg overflow-hidden">
