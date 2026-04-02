@@ -71,7 +71,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
     ? parseHotelsFromText(cleanContent)
     : { introText: cleanContent, hotels: [] };
 
-  console.log("PARSED:", hotels.map(h => ({ name: h.name, kind: h.kind, category: (h as any).category })));
+  console.log("PARSED DETAIL:", JSON.stringify(hotels.map(h => ({ name: h.name, kind: h.kind, category: (h as any).category }))));
 
   const flights = hotels.filter((h) => h.kind === "flight");
   const hotelItems = hotels.filter((h) => h.kind === "hotel" || h.kind === "generic");
