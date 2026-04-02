@@ -263,7 +263,7 @@ const Dashboard = () => {
 
   // ─── Select existing roteiro from sidebar ───
   const handleSelectRoteiro = (id: string) => {
-    clearTrip();
+    loadTripForRoteiro(id);
     setActiveRoteiroId(id);
   };
 
