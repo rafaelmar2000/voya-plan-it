@@ -49,6 +49,7 @@ function buildImageUrl(_name: string, _location: string): string {
 function detectKind(categoria: string, name: string, summary: string): ParsedSuggestionKind {
   const cat = categoria.toLowerCase();
   if (cat.includes("voo") || cat.includes("flight")) return "flight";
+  if (cat.includes("restaurante") || cat.includes("restaurant") || cat.includes("culin")) return "restaurant";
   if (cat.includes("atra") || cat.includes("attraction")) return "attraction";
   if (cat.includes("hotel") || cat.includes("hospedagem")) return "hotel";
 
