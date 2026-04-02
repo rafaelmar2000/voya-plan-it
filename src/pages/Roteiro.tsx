@@ -64,9 +64,10 @@ interface SectionProps {
   icon: React.ReactNode;
   items: TripItem[];
   subtotal: number;
+  isEstimate?: boolean;
 }
 
-const Section = ({ title, icon, items, subtotal }: SectionProps) => {
+const Section = ({ title, icon, items, subtotal, isEstimate }: SectionProps) => {
   if (items.length === 0) return null;
   return (
     <div className="space-y-4">
@@ -76,7 +77,10 @@ const Section = ({ title, icon, items, subtotal }: SectionProps) => {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-foreground font-['Bebas_Neue'] tracking-wider uppercase">{title}</h2>
-          <p className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? "item" : "itens"} · Subtotal: {formatCurrency(subtotal)}</p>
+          <p className="text-xs text-muted-foreground">
+            {items.length} {items.length === 1 ? "item" : "itens"} · Subtotal: {formatCurrency(subtotal)}
+            {isEstimate && <span className="text-muted-foreground/60 ml-1">(estimativa)</span>}
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
