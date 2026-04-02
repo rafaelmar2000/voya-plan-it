@@ -132,6 +132,7 @@ function parseTaggedSuggestions(text: string): { introText: string; hotels: Pars
 
       const kind = detectKind(categoria, name, summary);
       const photoUrl = extractTaggedValue(block, "FOTO");
+      if (kind === "restaurant") console.log("RESTAURANT photoUrl:", photoUrl, "block preview:", block.slice(0, 200));
 
       const loc = extractLocation(summary, detailsText);
       return {
