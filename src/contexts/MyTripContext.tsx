@@ -50,7 +50,44 @@ function removeFromStorage(roteiroId: string | null) {
 }
 
 function extractNumericPrice(price: string): number {
-  const cleaned = price.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+  const s = price.trim();
+
+  // Dollar sign tiers: $$ = 50, $$$ = 100, $$$$ = 200
+  const tierMatch = s.match(/^(\${2,4})$/);
+  if (tierMatch) {
+    const len = tierMatch[1].length;
+    const estimate = len === 2 ? 50 : len === 3 ? 100 : 200;
+    return estimate * 5.7;
+  }
+
+  // "+US$ 100" style
+  const plusMatch = s.match(/\+\s*(?:US\$|USD|\$)\s*([\d.,]+)/i);
+  if (plusMatch) {
+    const val = parseFloat(plusMatch[1].replace(/\./g, "").replace(",", "."));
+    return isNaN(val) ? 0 : (val * 1.2) * 5.7;
+  }
+
+  // Range: "US$ 10–20" or "US$ 10-20"
+  const rangeMatch = s.match(/(?:US\$|USD|\$)\s*([\d.,]+)\s*[–\-]\s*([\d.,]+)/i);
+  if (rangeMatch) {
+    const lo = parseFloat(rangeMatch[1].replace(/\./g, "").replace(",", "."));
+    const hi = parseFloat(rangeMatch[2].replace(/\./g, "").replace(",", "."));
+    if (!isNaN(lo) && !isNaN(hi)) {
+      const avg = (lo + hi) / 2;
+      const isUsd = /US\$|USD|\$/i.test(s) && !/R\$/i.test(s);
+      return isUsd ? avg * 5.7 : avg;
+    }
+  }
+
+  // Single USD value
+  const usdMatch = s.match(/(?:US\$|USD)\s*([\d.,]+)/i);
+  if (usdMatch) {
+    const val = parseFloat(usdMatch[1].replace(/\./g, "").replace(",", "."));
+    return isNaN(val) ? 0 : val * 5.7;
+  }
+
+  // BRL or plain number
+  const cleaned = s.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 }
