@@ -117,6 +117,22 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
           </div>
 
           {hotel.description && (() => {
+            if (hotel.kind === "restaurant") {
+              const ratingMatch = hotel.description.match(/⭐\s*([\d.]+)/);
+              const ratingNum = ratingMatch ? Number(ratingMatch[1]) : null;
+              const parts = hotel.description.split("|").map(s => s.trim());
+              const categoria = parts.filter(s => !s.match(/^\d+\.\d+$/) && !s.match(/⭐/) && !s.match(/^\d+\s/) && s.length > 2).pop();
+              return (
+                <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                  {ratingNum !== null && (
+                    <span className={`font-medium mr-1 ${
+                      ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
+                    }`}>★ {ratingNum.toFixed(1)}</span>
+                  )}
+                  {categoria && <span>{categoria}</span>}
+                </p>
+              );
+            }
             const ratingMatch = hotel.description.match(/⭐\s*([\d.]+)/);
             const ratingNum = ratingMatch ? Number(ratingMatch[1]) : null;
             const cleanDesc = hotel.description
@@ -126,7 +142,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
               .join(" | ");
             return (
               <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
-                {hotel.kind !== "restaurant" && ratingNum !== null && (
+                {ratingNum !== null && (
                   <span className={`font-medium mr-1 ${
                     ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
                   }`}>★ {ratingNum.toFixed(1)}</span>
