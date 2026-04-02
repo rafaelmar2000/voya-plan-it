@@ -46,7 +46,7 @@ function cleanDetailsText(detailsText: string): string {
 
 function isBadLocation(loc: string | undefined): boolean {
   if (!loc) return true;
-  return loc.startsWith("http") || loc.includes("%");
+  return loc.startsWith("http") || loc.includes("%") || loc.includes("-gj_") || loc.includes("gps-cs") || loc.length > 60;
 }
 
 interface HotelSuggestionCardProps { hotel: ParsedHotel; index: number; }
