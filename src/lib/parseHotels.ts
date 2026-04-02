@@ -54,7 +54,8 @@ function detectKind(categoria: string, name: string, summary: string): ParsedSug
 
   const source = `${name} ${summary}`.toLowerCase();
   if (/(?:voo|flight|partida|chegada|embarque)/.test(source)) return "flight";
-  if (/(?:atra[çc][ãa]o|museu|parque|golden hour)/.test(source)) return "attraction";
+  if (/(?:restaurante|culin[áa]ri|gastronom|bistr[ôo]|pizzaria|hamburgueria|chef)/.test(source)) return "restaurant";
+  if (/(?:atra[çc][ãa]o|museu|parque|golden hour|mirante|monumento|praia|trilha)/.test(source)) return "attraction";
   if (/(?:hotel|resort|hostel|pousada)/.test(source)) return "hotel";
   return "generic";
 }
