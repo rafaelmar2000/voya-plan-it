@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from "react";
 import type { ParsedHotel } from "@/lib/parseHotels";
 
 export interface TripItem {
@@ -20,6 +20,7 @@ interface MyTripContextValue {
 }
 
 const MyTripContext = createContext<MyTripContextValue | null>(null);
+const STORAGE_KEY = "voya_trip_items";
 
 function extractNumericPrice(price: string): number {
   const cleaned = price.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
@@ -27,9 +28,32 @@ function extractNumericPrice(price: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+function loadFromStorage(): TripItem[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as TripItem[];
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(items: TripItem[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    // ignorar erros de storage
+  }
+}
+
 export function MyTripProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<TripItem[]>([]);
+  const [items, setItems] = useState<TripItem[]>(() => loadFromStorage());
   const onItemAddedRef = useRef<((item: TripItem) => void) | null>(null);
+
+  // Persiste sempre que items mudar
+  useEffect(() => {
+    saveToStorage(items);
+  }, [items]);
 
   const setOnItemAdded = useCallback((cb: ((item: TripItem) => void) | null) => {
     onItemAddedRef.current = cb;
@@ -60,7 +84,11 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
   );
 
   const totalBudget = items.reduce((sum, i) => sum + i.priceNumeric, 0);
-  const clearTrip = useCallback(() => setItems([]), []);
+
+  const clearTrip = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   return (
     <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip, setOnItemAdded }}>
