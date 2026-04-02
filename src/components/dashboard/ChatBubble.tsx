@@ -75,7 +75,7 @@ const ChatBubble = ({ role, content, hasFunctionCall, children, onSend }: ChatBu
 
   const flights = hotels.filter((h) => h.kind === "flight");
   const hotelItems = hotels.filter((h) => h.kind === "hotel" || h.kind === "generic");
-  const attractionItems = hotels.filter((h) => h.kind === "attraction");
+  const attractionItems = hotels.filter((h) => h.kind === "attraction" || h.kind === "restaurant");
 
   hotels.filter(h => h.kind === "attraction").forEach(h => {
     console.log("ATTRACTION detailsText:", h.name, "|||", h.detailsText.slice(0, 200));
