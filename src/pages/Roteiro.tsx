@@ -361,7 +361,10 @@ const Roteiro = () => {
             ].filter(r => r.count > 0).map(r => (
               <div key={r.label} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{r.label} ({r.count})</span>
-                <span className="font-medium text-foreground">{formatCurrency(r.total)}</span>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(r.total)}
+                  {r.label === "Restaurantes" && <span className="text-xs text-muted-foreground ml-1">(estimativa)</span>}
+                </span>
               </div>
             ))}
             <Separator className="bg-primary/20" />
