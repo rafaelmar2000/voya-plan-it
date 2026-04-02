@@ -345,7 +345,7 @@ const Roteiro = () => {
       <div id="roteiro-content" className="max-w-4xl mx-auto px-6 py-8 space-y-10">
         <Section title="Voos" icon={<Plane className="w-5 h-5" />} items={flights} subtotal={getCategoryTotal(flights)} />
         <Section title="Hotéis" icon={<Hotel className="w-5 h-5" />} items={hotels} subtotal={getCategoryTotal(hotels)} />
-        <Section title="Restaurantes" icon={<UtensilsCrossed className="w-5 h-5" />} items={restaurants} subtotal={getCategoryTotal(restaurants)} />
+        <Section title="Restaurantes" icon={<UtensilsCrossed className="w-5 h-5" />} items={restaurants} subtotal={getCategoryTotal(restaurants)} isEstimate />
         <Section title="Atrações" icon={<Compass className="w-5 h-5" />} items={attractions} subtotal={getCategoryTotal(attractions)} />
 
         {/* Budget Summary */}
