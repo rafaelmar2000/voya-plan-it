@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Roteiro from "./pages/Roteiro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
