@@ -252,15 +252,13 @@ const Dashboard = () => {
 
   // ─── New roteiro ───
   const handleNewRoteiro = () => {
+    loadTripForRoteiro(null);
     setActiveRoteiroId(null);
-    clearTrip();
-    setMessages([
-      {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "Novo roteiro iniciado. Para onde estamos indo?",
-      },
-    ]);
+    setMessages([{
+      id: Date.now().toString(),
+      role: "assistant",
+      content: "Novo roteiro iniciado. Para onde estamos indo?",
+    }]);
   };
 
   // ─── Select existing roteiro from sidebar ───
