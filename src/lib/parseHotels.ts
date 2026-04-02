@@ -1,4 +1,4 @@
-export type ParsedSuggestionKind = "hotel" | "flight" | "attraction" | "generic";
+export type ParsedSuggestionKind = "hotel" | "flight" | "attraction" | "restaurant" | "generic";
 
 export interface ParsedHotel {
   name: string;
@@ -49,12 +49,14 @@ function buildImageUrl(_name: string, _location: string): string {
 function detectKind(categoria: string, name: string, summary: string): ParsedSuggestionKind {
   const cat = categoria.toLowerCase();
   if (cat.includes("voo") || cat.includes("flight")) return "flight";
+  if (cat.includes("restaurante") || cat.includes("restaurant") || cat.includes("culin")) return "restaurant";
   if (cat.includes("atra") || cat.includes("attraction")) return "attraction";
   if (cat.includes("hotel") || cat.includes("hospedagem")) return "hotel";
 
   const source = `${name} ${summary}`.toLowerCase();
   if (/(?:voo|flight|partida|chegada|embarque)/.test(source)) return "flight";
-  if (/(?:atra[çc][ãa]o|museu|parque|golden hour)/.test(source)) return "attraction";
+  if (/(?:restaurante|culin[áa]ri|gastronom|bistr[ôo]|pizzaria|hamburgueria|chef)/.test(source)) return "restaurant";
+  if (/(?:atra[çc][ãa]o|museu|parque|golden hour|mirante|monumento|praia|trilha)/.test(source)) return "attraction";
   if (/(?:hotel|resort|hostel|pousada)/.test(source)) return "hotel";
   return "generic";
 }
@@ -66,7 +68,8 @@ function buildBadge(summary: string, kind: ParsedSuggestionKind): string {
   if (/(?:4 estrelas|★★★★)/.test(s)) return "★★★★";
   if (/(?:boutique)/.test(s)) return "Hotel Boutique";
   if (kind === "flight") return "Logística de Voo";
-  if (kind === "attraction") return "Spot Recomendado";
+  if (kind === "attraction") return "Atração";
+  if (kind === "restaurant") return "Restaurante";
   return "Recomendado pelo Voya";
 }
 
