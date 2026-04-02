@@ -105,8 +105,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             <h4 className="font-semibold text-foreground text-sm leading-tight">{hotel.name}</h4>
             {(() => {
               const displayLocation = hotel.kind === "restaurant" && hotel.description
-                ? hotel.description.split("|")[0]?.trim() || hotel.location
-                : hotel.location;
+                ? hotel.description.split("|")[0]?.trim() || safeLocation
+                : safeLocation;
               return displayLocation ? (
                 <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                   <MapPin className="w-3 h-3 shrink-0" />
