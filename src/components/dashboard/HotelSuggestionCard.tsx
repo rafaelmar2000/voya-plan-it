@@ -94,8 +94,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             </Badge>
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
-            <span className="text-sm font-bold text-primary">{hotel.price}</span>
-            <span className="text-[10px] text-muted-foreground ml-1">/noite</span>
+            <span className="text-sm font-bold text-primary">{hotel.price.replace(/\/noite/gi, "").trim()}</span>
+            {hotel.kind !== "attraction" && <span className="text-[10px] text-muted-foreground ml-1">/noite</span>}
           </div>
         </div>
 
