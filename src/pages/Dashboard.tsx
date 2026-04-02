@@ -350,6 +350,23 @@ const Dashboard = () => {
             <div ref={messagesEndRef} />
           </div>
         </div>
+        {/* Floating Roteiro Button */}
+        {(() => {
+          const hasFlight = items.some(i => i.item.kind === "flight");
+          const hasHotel = items.some(i => i.item.kind === "hotel" || i.item.kind === "generic");
+          if (!hasFlight || !hasHotel) return null;
+          return (
+            <div className="px-4 sm:px-6 pb-2">
+              <button
+                onClick={() => navigate("/roteiro")}
+                className="w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-medium hover:bg-primary/20 transition-all"
+              >
+                <Sparkles className="w-4 h-4" />
+                Ver Roteiro Completo
+              </button>
+            </div>
+          );
+        })()}
 
         <DashboardChatInput onSend={handleSend} loading={thinking} />
       </div>
