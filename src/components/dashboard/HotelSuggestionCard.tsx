@@ -111,8 +111,13 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
           </div>
 
           {hotel.description && (() => {
-            const ratingMatch = hotel.description.match(/[\d.]+/);
-            const ratingNum = ratingMatch ? Number(ratingMatch[0]) : null;
+            const ratingMatch = hotel.description.match(/⭐\s*([\d.]+)/);
+            const ratingNum = ratingMatch ? Number(ratingMatch[1]) : null;
+            const cleanDesc = hotel.description
+              .split("|")
+              .map(s => s.trim())
+              .filter(s => !s.match(/^\d+\.\d+$/) && !s.includes("Estados Unidos") && !s.includes("NY 1"))
+              .join(" | ");
             return (
               <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
                 {ratingNum !== null && (
@@ -120,7 +125,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
                   }`}>★ {ratingNum.toFixed(1)}</span>
                 )}
-                {hotel.description}
+                {cleanDesc}
               </p>
             );
           })()}

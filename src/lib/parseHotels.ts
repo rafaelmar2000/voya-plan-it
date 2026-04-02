@@ -66,7 +66,8 @@ function buildBadge(summary: string, kind: ParsedSuggestionKind): string {
   if (/(?:4 estrelas|★★★★)/.test(s)) return "★★★★";
   if (/(?:boutique)/.test(s)) return "Hotel Boutique";
   if (kind === "flight") return "Logística de Voo";
-  if (kind === "attraction") return "Spot Recomendado";
+  if (kind === "attraction") return "Atração";
+  if (kind === "restaurant") return "Restaurante";
   return "Recomendado pelo Voya";
 }
 
