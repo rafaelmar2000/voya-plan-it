@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useMyTrip } from "@/contexts/MyTripContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
