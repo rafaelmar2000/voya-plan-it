@@ -64,9 +64,10 @@ interface SectionProps {
   icon: React.ReactNode;
   items: TripItem[];
   subtotal: number;
+  isEstimate?: boolean;
 }
 
-const Section = ({ title, icon, items, subtotal }: SectionProps) => {
+const Section = ({ title, icon, items, subtotal, isEstimate }: SectionProps) => {
   if (items.length === 0) return null;
   return (
     <div className="space-y-4">
@@ -76,7 +77,10 @@ const Section = ({ title, icon, items, subtotal }: SectionProps) => {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-foreground font-['Bebas_Neue'] tracking-wider uppercase">{title}</h2>
-          <p className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? "item" : "itens"} · Subtotal: {formatCurrency(subtotal)}</p>
+          <p className="text-xs text-muted-foreground">
+            {items.length} {items.length === 1 ? "item" : "itens"} · Subtotal: {formatCurrency(subtotal)}
+            {isEstimate && <span className="text-muted-foreground/60 ml-1">(estimativa)</span>}
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -345,7 +349,7 @@ const Roteiro = () => {
       <div id="roteiro-content" className="max-w-4xl mx-auto px-6 py-8 space-y-10">
         <Section title="Voos" icon={<Plane className="w-5 h-5" />} items={flights} subtotal={getCategoryTotal(flights)} />
         <Section title="Hotéis" icon={<Hotel className="w-5 h-5" />} items={hotels} subtotal={getCategoryTotal(hotels)} />
-        <Section title="Restaurantes" icon={<UtensilsCrossed className="w-5 h-5" />} items={restaurants} subtotal={getCategoryTotal(restaurants)} />
+        <Section title="Restaurantes" icon={<UtensilsCrossed className="w-5 h-5" />} items={restaurants} subtotal={getCategoryTotal(restaurants)} isEstimate />
         <Section title="Atrações" icon={<Compass className="w-5 h-5" />} items={attractions} subtotal={getCategoryTotal(attractions)} />
 
         {/* Budget Summary */}
@@ -361,7 +365,10 @@ const Roteiro = () => {
             ].filter(r => r.count > 0).map(r => (
               <div key={r.label} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{r.label} ({r.count})</span>
-                <span className="font-medium text-foreground">{formatCurrency(r.total)}</span>
+                <span className="font-medium text-foreground">
+                  {formatCurrency(r.total)}
+                  {r.label === "Restaurantes" && <span className="text-xs text-muted-foreground ml-1">(estimativa)</span>}
+                </span>
               </div>
             ))}
             <Separator className="bg-primary/20" />
