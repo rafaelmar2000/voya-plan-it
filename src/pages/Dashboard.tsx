@@ -149,6 +149,7 @@ const Dashboard = () => {
           return;
         }
         setActiveRoteiroId(roteiroId);
+        saveTripForRoteiro(roteiroId);
       }
 
       // Persist user message
