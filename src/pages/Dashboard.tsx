@@ -74,8 +74,9 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeRoteiroId) {
       loadMessages(activeRoteiroId);
+      loadTripForRoteiro(activeRoteiroId);
     }
-  }, [activeRoteiroId, loadMessages]);
+  }, [activeRoteiroId, loadMessages, loadTripForRoteiro]);
 
   // ─── Persist a single message ───
   const persistMessage = async (roteiroId: string, role: string, content: string) => {
