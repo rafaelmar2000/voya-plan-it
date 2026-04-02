@@ -17,20 +17,19 @@ interface MyTripContextValue {
   totalBudget: number;
   clearTrip: () => void;
   setOnItemAdded: (cb: ((item: TripItem) => void) | null) => void;
+  loadTripForRoteiro: (roteiroId: string | null) => void;
+  saveTripForRoteiro: (roteiroId: string | null) => void;
 }
 
 const MyTripContext = createContext<MyTripContextValue | null>(null);
-const STORAGE_KEY = "voya_trip_items";
 
-function extractNumericPrice(price: string): number {
-  const cleaned = price.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
+function storageKey(roteiroId: string | null) {
+  return roteiroId ? `voya_trip_${roteiroId}` : "voya_trip_new";
 }
 
-function loadFromStorage(): TripItem[] {
+function loadFromStorage(roteiroId: string | null): TripItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(roteiroId));
     if (!raw) return [];
     return JSON.parse(raw) as TripItem[];
   } catch {
@@ -38,26 +37,51 @@ function loadFromStorage(): TripItem[] {
   }
 }
 
-function saveToStorage(items: TripItem[]) {
+function saveToStorage(roteiroId: string | null, items: TripItem[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {
-    // ignorar erros de storage
-  }
+    localStorage.setItem(storageKey(roteiroId), JSON.stringify(items));
+  } catch {}
+}
+
+function removeFromStorage(roteiroId: string | null) {
+  try {
+    localStorage.removeItem(storageKey(roteiroId));
+  } catch {}
+}
+
+function extractNumericPrice(price: string): number {
+  const cleaned = price.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
 }
 
 export function MyTripProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<TripItem[]>(() => loadFromStorage());
+  const [items, setItems] = useState<TripItem[]>([]);
+  const currentRoteiroId = useRef<string | null>(null);
   const onItemAddedRef = useRef<((item: TripItem) => void) | null>(null);
-
-  // Persiste sempre que items mudar
-  useEffect(() => {
-    saveToStorage(items);
-  }, [items]);
 
   const setOnItemAdded = useCallback((cb: ((item: TripItem) => void) | null) => {
     onItemAddedRef.current = cb;
   }, []);
+
+  const loadTripForRoteiro = useCallback((roteiroId: string | null) => {
+    currentRoteiroId.current = roteiroId;
+    setItems(loadFromStorage(roteiroId));
+  }, []);
+
+  const saveTripForRoteiro = useCallback((roteiroId: string | null) => {
+    if (!roteiroId) return;
+    const newItems = loadFromStorage(null);
+    if (newItems.length > 0) {
+      saveToStorage(roteiroId, newItems);
+      removeFromStorage(null);
+    }
+    currentRoteiroId.current = roteiroId;
+  }, []);
+
+  useEffect(() => {
+    saveToStorage(currentRoteiroId.current, items);
+  }, [items]);
 
   const addItem = useCallback((item: ParsedHotel, selectedClass?: string) => {
     const id = `${item.name}-${item.kind}-${selectedClass || ""}`;
@@ -86,12 +110,16 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
   const totalBudget = items.reduce((sum, i) => sum + i.priceNumeric, 0);
 
   const clearTrip = useCallback(() => {
+    removeFromStorage(currentRoteiroId.current);
     setItems([]);
-    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (
-    <MyTripContext.Provider value={{ items, addItem, removeItem, isSelected, getItem, totalBudget, clearTrip, setOnItemAdded }}>
+    <MyTripContext.Provider value={{
+      items, addItem, removeItem, isSelected, getItem,
+      totalBudget, clearTrip, setOnItemAdded,
+      loadTripForRoteiro, saveTripForRoteiro
+    }}>
       {children}
     </MyTripContext.Provider>
   );

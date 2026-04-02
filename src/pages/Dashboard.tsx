@@ -26,7 +26,7 @@ const WELCOME_MESSAGE: Message = {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { clearTrip, setOnItemAdded } = useMyTrip();
+  const { clearTrip, setOnItemAdded, loadTripForRoteiro, saveTripForRoteiro } = useMyTrip();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeRoteiroId, setActiveRoteiroId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -74,8 +74,9 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeRoteiroId) {
       loadMessages(activeRoteiroId);
+      loadTripForRoteiro(activeRoteiroId);
     }
-  }, [activeRoteiroId, loadMessages]);
+  }, [activeRoteiroId, loadMessages, loadTripForRoteiro]);
 
   // ─── Persist a single message ───
   const persistMessage = async (roteiroId: string, role: string, content: string) => {
@@ -148,6 +149,7 @@ const Dashboard = () => {
           return;
         }
         setActiveRoteiroId(roteiroId);
+        saveTripForRoteiro(roteiroId);
       }
 
       // Persist user message
@@ -250,20 +252,18 @@ const Dashboard = () => {
 
   // ─── New roteiro ───
   const handleNewRoteiro = () => {
+    loadTripForRoteiro(null);
     setActiveRoteiroId(null);
-    clearTrip();
-    setMessages([
-      {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: "Novo roteiro iniciado. Para onde estamos indo?",
-      },
-    ]);
+    setMessages([{
+      id: Date.now().toString(),
+      role: "assistant",
+      content: "Novo roteiro iniciado. Para onde estamos indo?",
+    }]);
   };
 
   // ─── Select existing roteiro from sidebar ───
   const handleSelectRoteiro = (id: string) => {
-    clearTrip();
+    loadTripForRoteiro(id);
     setActiveRoteiroId(id);
   };
 
