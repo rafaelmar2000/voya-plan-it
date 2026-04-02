@@ -51,7 +51,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
-  const primaryImage = hotel.photoUrl || FALLBACK_IMAGE;
+  const RESTAURANT_FALLBACK = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800";
+  const primaryImage = hotel.photoUrl || (hotel.kind === "restaurant" ? RESTAURANT_FALLBACK : FALLBACK_IMAGE);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
   const selected = isSelected(hotel.name);
   const tripItem = getItem(hotel.name);
