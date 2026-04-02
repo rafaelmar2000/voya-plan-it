@@ -96,19 +96,24 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
             <span className="text-sm font-bold text-primary">{hotel.price.replace(/\/noite/gi, "").trim()}</span>
-            {hotel.kind !== "attraction" && <span className="text-[10px] text-muted-foreground ml-1">/noite</span>}
+            {hotel.kind === "hotel" && <span className="text-[10px] text-muted-foreground ml-1">/noite</span>}
           </div>
         </div>
 
         <div className="p-4 space-y-2.5">
           <div>
             <h4 className="font-semibold text-foreground text-sm leading-tight">{hotel.name}</h4>
-            {hotel.location && (
-              <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                <MapPin className="w-3 h-3 shrink-0" />
-                {hotel.location}
-              </p>
-            )}
+            {(() => {
+              const displayLocation = hotel.kind === "restaurant" && hotel.description
+                ? hotel.description.split("|")[0]?.trim() || hotel.location
+                : hotel.location;
+              return displayLocation ? (
+                <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  {displayLocation}
+                </p>
+              ) : null;
+            })()}
           </div>
 
           {hotel.description && (() => {
@@ -121,7 +126,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
               .join(" | ");
             return (
               <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
-                {ratingNum !== null && (
+                {hotel.kind !== "restaurant" && ratingNum !== null && (
                   <span className={`font-medium mr-1 ${
                     ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
                   }`}>★ {ratingNum.toFixed(1)}</span>
