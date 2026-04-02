@@ -1,4 +1,4 @@
-export type ParsedSuggestionKind = "hotel" | "flight" | "attraction" | "generic";
+export type ParsedSuggestionKind = "hotel" | "flight" | "attraction" | "restaurant" | "generic";
 
 export interface ParsedHotel {
   name: string;
