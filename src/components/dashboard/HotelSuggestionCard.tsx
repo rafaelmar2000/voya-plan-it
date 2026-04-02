@@ -91,7 +91,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
           <div className="absolute top-3 left-3">
             <Badge className="bg-primary/90 text-primary-foreground backdrop-blur-sm border-none text-[10px] uppercase tracking-wider font-medium px-2.5 py-1">
               <Sparkles className="w-3 h-3 mr-1" />
-              {hotel.badge}
+              {hotel.kind === "hotel" ? "HOTEL" : hotel.badge}
             </Badge>
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
