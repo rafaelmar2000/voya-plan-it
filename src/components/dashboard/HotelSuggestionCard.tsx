@@ -13,6 +13,7 @@ import type { ParsedHotel } from "@/lib/parseHotels";
 import { useMyTrip } from "@/contexts/MyTripContext";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
+const RESTAURANT_FALLBACK = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800";
 
 interface Provider { name: string; price: string; link: string; freeCancellation: boolean; official: boolean; }
 
@@ -43,6 +44,11 @@ function cleanDetailsText(detailsText: string): string {
     .trim();
 }
 
+function isBadLocation(loc: string | undefined): boolean {
+  if (!loc) return true;
+  return loc.startsWith("http") || loc.includes("%");
+}
+
 interface HotelSuggestionCardProps { hotel: ParsedHotel; index: number; }
 
 const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
@@ -51,12 +57,11 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
   
   const { addItem, removeItem, isSelected, getItem } = useMyTrip();
 
-  const RESTAURANT_FALLBACK = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800";
   const primaryImage = hotel.photoUrl || (hotel.kind === "restaurant" ? RESTAURANT_FALLBACK : FALLBACK_IMAGE);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (hotel.location ? " " + hotel.location : ""))}`;
+  const safeLocation = isBadLocation(hotel.location) ? null : hotel.location;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.name + (safeLocation ? " " + safeLocation : ""))}`;
   const selected = isSelected(hotel.name);
   const tripItem = getItem(hotel.name);
-  
 
   const getDetail = (key: string) => {
     const m = hotel.detailsText.match(new RegExp(`${key}:\\s*([^\\n]+)`));
@@ -70,6 +75,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
       addItem(hotel);
     }
   };
+
+  const badgeLabel = hotel.kind === "hotel" ? "HOTEL" : hotel.badge;
 
   return (
     <>
@@ -91,7 +98,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
           <div className="absolute top-3 left-3">
             <Badge className="bg-primary/90 text-primary-foreground backdrop-blur-sm border-none text-[10px] uppercase tracking-wider font-medium px-2.5 py-1">
               <Sparkles className="w-3 h-3 mr-1" />
-              {hotel.badge}
+              {badgeLabel}
             </Badge>
           </div>
           <div className="absolute bottom-3 right-3 bg-background/60 backdrop-blur-md border border-border/30 rounded-md px-3 py-1.5">
@@ -105,8 +112,8 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             <h4 className="font-semibold text-foreground text-sm leading-tight">{hotel.name}</h4>
             {(() => {
               const displayLocation = hotel.kind === "restaurant" && hotel.description
-                ? hotel.description.split("|")[0]?.trim() || hotel.location
-                : hotel.location;
+                ? hotel.description.split("|")[0]?.trim() || safeLocation
+                : safeLocation;
               return displayLocation ? (
                 <p className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                   <MapPin className="w-3 h-3 shrink-0" />
@@ -135,11 +142,11 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             }
             const ratingMatch = hotel.description.match(/⭐\s*([\d.]+)/);
             const ratingNum = ratingMatch ? Number(ratingMatch[1]) : null;
-            const cleanDesc = hotel.description
+            const parts = hotel.description
               .split("|")
               .map(s => s.trim())
-              .filter(s => !s.match(/^\d+\.\d+$/) && !s.includes("Estados Unidos") && !s.includes("NY 1"))
-              .join(" | ");
+              .filter(s => !s.match(/^\d+\.\d+$/) && !s.match(/⭐/) && !s.includes("Estados Unidos") && !s.includes("NY 1") && !isBadLocation(s));
+            const firstAmenity = parts.find(s => s.length > 1);
             return (
               <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
                 {ratingNum !== null && (
@@ -147,7 +154,7 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                     ratingNum >= 4.0 ? "text-emerald-400" : ratingNum >= 3.0 ? "text-amber-400" : "text-red-400"
                   }`}>★ {ratingNum.toFixed(1)}</span>
                 )}
-                {cleanDesc}
+                {firstAmenity && <span>{firstAmenity}</span>}
               </p>
             );
           })()}
@@ -194,10 +201,10 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
             <DialogTitle className="text-foreground text-xl font-semibold tracking-tight">
               {hotel.name}
             </DialogTitle>
-            {hotel.location && (
+            {safeLocation && (
               <DialogDescription className="flex items-center gap-1.5 text-muted-foreground text-sm">
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{hotel.location?.startsWith('http') ? hotel.name : hotel.location}</span>
+                <span className="truncate">{safeLocation}</span>
               </DialogDescription>
             )}
           </DialogHeader>
@@ -225,10 +232,10 @@ const HotelSuggestionCard = ({ hotel }: HotelSuggestionCardProps) => {
                   <span className="text-3xl font-bold text-primary tracking-tight">
                     {hotel.price.replace(/\/noite/gi, "").trim()}
                   </span>
-                  {hotel.kind !== "attraction" && <span className="text-sm text-muted-foreground ml-1">/noite</span>}
+                  {hotel.kind === "hotel" && <span className="text-sm text-muted-foreground ml-1">/noite</span>}
                 </div>
                 <Badge className="bg-primary/90 text-primary-foreground border-none text-xs">
-                  {hotel.badge}
+                  {badgeLabel}
                 </Badge>
               </div>
 
