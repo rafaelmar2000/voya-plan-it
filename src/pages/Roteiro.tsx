@@ -3,10 +3,18 @@ import { useMyTrip, type TripItem } from "@/contexts/MyTripContext";
 import { ArrowLeft, Download, Plane, Hotel, UtensilsCrossed, Compass, MapPin, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=600&h=340&fit=crop&q=80";
 const RESTAURANT_FALLBACK = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800";
+
+function isBadLocation(loc: string | undefined | null): boolean {
+  if (!loc) return true;
+  if (loc.length < 8) return true;
+  if (/24h|fecha|abre\b|^ia$/i.test(loc)) return true;
+  if (loc.startsWith("http") || loc.includes("%") || loc.includes("-gj_") || loc.includes("gps-cs") || loc.length > 60) return true;
+  return false;
+}
 
 function groupByKind(items: TripItem[]) {
   const flights = items.filter(i => i.item.kind === "flight");
@@ -25,7 +33,7 @@ function extractTripName(items: TripItem[]): string {
     return flight.item.name;
   }
   const hotel = items.find(i => i.item.kind === "hotel");
-  if (hotel?.item.location) return `Viagem para ${hotel.item.location}`;
+  if (hotel?.item.location && !isBadLocation(hotel.item.location)) return `Viagem para ${hotel.item.location}`;
   return "Meu Roteiro de Viagem";
 }
 
@@ -43,6 +51,14 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function getDisplayLocation(item: TripItem["item"]): string | null {
+  if (item.kind === "restaurant" && item.description) {
+    const loc = item.description.split("|")[0]?.trim();
+    return isBadLocation(loc) ? null : loc;
+  }
+  return isBadLocation(item.location) ? null : item.location;
+}
+
 interface SectionProps {
   title: string;
   icon: React.ReactNode;
@@ -53,7 +69,7 @@ interface SectionProps {
 const Section = ({ title, icon, items, subtotal }: SectionProps) => {
   if (items.length === 0) return null;
   return (
-    <div className="space-y-4" id={`section-${title.toLowerCase()}`}>
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
           {icon}
@@ -76,10 +92,7 @@ const ItemCard = ({ tripItem }: { tripItem: TripItem }) => {
   const item = tripItem.item;
   const image = getImageForItem(tripItem);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + (item.location ? " " + item.location : ""))}`;
-
-  const displayLocation = item.kind === "restaurant" && item.description
-    ? item.description.split("|")[0]?.trim()
-    : item.location || null;
+  const displayLocation = getDisplayLocation(item);
 
   return (
     <div className="rounded-lg border border-border/40 bg-card/30 backdrop-blur-sm overflow-hidden hover:border-primary/30 transition-all">
@@ -88,6 +101,7 @@ const ItemCard = ({ tripItem }: { tripItem: TripItem }) => {
           src={image}
           alt={item.name}
           className="w-full h-full object-cover"
+          crossOrigin="anonymous"
           onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
@@ -122,10 +136,74 @@ const ItemCard = ({ tripItem }: { tripItem: TripItem }) => {
   );
 };
 
+/* ─── Cover page component (rendered off-screen for PDF capture) ─── */
+const PdfCover = ({ tripName, totalBudget }: { tripName: string; totalBudget: number }) => {
+  const today = new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long", day: "numeric" });
+  return (
+    <div
+      id="pdf-cover"
+      style={{
+        width: 794,
+        minHeight: 1123,
+        background: "#0A0A0A",
+        color: "#fff",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        fontFamily: "'Inter', 'Helvetica', sans-serif",
+        overflow: "hidden",
+      }}
+    >
+      {/* SVG decorative borders */}
+      <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} viewBox="0 0 794 1123" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Corner brackets */}
+        <path d="M40 40 L100 40" stroke="#F5A623" strokeWidth="2" />
+        <path d="M40 40 L40 100" stroke="#F5A623" strokeWidth="2" />
+        <path d="M694 40 L754 40" stroke="#F5A623" strokeWidth="2" />
+        <path d="M754 40 L754 100" stroke="#F5A623" strokeWidth="2" />
+        <path d="M40 1023 L40 1083" stroke="#F5A623" strokeWidth="2" />
+        <path d="M40 1083 L100 1083" stroke="#F5A623" strokeWidth="2" />
+        <path d="M754 1023 L754 1083" stroke="#F5A623" strokeWidth="2" />
+        <path d="M694 1083 L754 1083" stroke="#F5A623" strokeWidth="2" />
+        {/* Geometric vertical lines */}
+        {[0, 1, 2, 3, 4].map(i => (
+          <line key={`l${i}`} x1={60 + i * 12} y1={200} x2={60 + i * 12} y2={350} stroke="#F5A623" strokeWidth="0.7" opacity="0.4" />
+        ))}
+        {[0, 1, 2, 3, 4].map(i => (
+          <line key={`r${i}`} x1={734 - i * 12} y1={200} x2={734 - i * 12} y2={350} stroke="#F5A623" strokeWidth="0.7" opacity="0.4" />
+        ))}
+        {/* Skyline at bottom */}
+        <path d="M0 980 L60 980 L60 940 L90 940 L90 960 L130 960 L130 920 L150 900 L170 920 L170 960 L220 960 L220 930 L250 930 L250 950 L300 950 L300 910 L310 890 L320 910 L320 940 L370 940 L370 960 L420 960 L420 935 L440 920 L460 935 L460 960 L510 960 L510 940 L550 940 L550 925 L570 910 L590 925 L590 950 L640 950 L640 930 L680 930 L680 960 L730 960 L730 940 L794 940 L794 1123 L0 1123 Z" fill="#F5A623" opacity="0.06" />
+        {/* Diamond divider */}
+        <line x1={150} y1={561} x2={370} y2={561} stroke="#F5A623" strokeWidth="1" />
+        <line x1={424} y1={561} x2={644} y2={561} stroke="#F5A623" strokeWidth="1" />
+        <polygon points="397,551 407,561 397,571 387,561" fill="#F5A623" />
+      </svg>
+
+      <div style={{ zIndex: 1, textAlign: "center", padding: "0 60px" }}>
+        <div style={{ fontSize: 14, letterSpacing: 6, color: "#F5A623", marginBottom: 30, opacity: 0.7 }}>VOYA</div>
+        <h1 style={{ fontSize: 48, fontWeight: 700, color: "#F5A623", letterSpacing: 4, margin: "0 0 24px" }}>ROTEIRO DE VIAGEM</h1>
+        <p style={{ fontSize: 24, color: "#fff", margin: "0 0 60px", fontWeight: 300 }}>{tripName}</p>
+        <div style={{ height: 30 }} />
+        <p style={{ fontSize: 13, color: "#999", margin: "40px 0 8px" }}>Planejado em {today}</p>
+        <p style={{ fontSize: 12, color: "#F5A623", margin: "0 0 60px" }}>VOYA — Seu assistente de viagem inteligente</p>
+        <div style={{ marginTop: 40 }}>
+          <p style={{ fontSize: 14, color: "#F5A623", letterSpacing: 3, marginBottom: 8 }}>ORÇAMENTO TOTAL ESTIMADO</p>
+          <p style={{ fontSize: 40, fontWeight: 700, color: "#F5A623", margin: 0 }}>{formatCurrency(totalBudget)}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Roteiro = () => {
   const navigate = useNavigate();
   const { items, totalBudget } = useMyTrip();
   const [generating, setGenerating] = useState(false);
+  const [showCover, setShowCover] = useState(false);
+  const coverRef = useRef<HTMLDivElement>(null);
 
   const { flights, hotels, restaurants, attractions } = groupByKind(items);
   const tripName = extractTripName(items);
@@ -133,234 +211,87 @@ const Roteiro = () => {
   const handleDownloadPdf = async () => {
     setGenerating(true);
     try {
-      const { default: jsPDF } = await import("jspdf");
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      // Show cover temporarily
+      setShowCover(true);
+      await new Promise(r => setTimeout(r, 300));
 
       const doc = new jsPDF("p", "mm", "a4");
-      const W = 210;
-      const H = 297;
-      const GOLD = "#F5A623";
-      const BG = "#0A0A0A";
-      const WHITE = "#FFFFFF";
-      const GRAY = "#999999";
+      const pdfW = 210;
+      const pdfH = 297;
 
-      // Helper
-      const drawDecoCorners = (page: number) => {
-        doc.setPage(page);
-        doc.setDrawColor(GOLD);
-        doc.setLineWidth(0.5);
-        // Top-left
-        doc.line(10, 10, 30, 10);
-        doc.line(10, 10, 10, 30);
-        // Top-right
-        doc.line(W - 10, 10, W - 30, 10);
-        doc.line(W - 10, 10, W - 10, 30);
-        // Bottom-left
-        doc.line(10, H - 10, 30, H - 10);
-        doc.line(10, H - 10, 10, H - 30);
-        // Bottom-right
-        doc.line(W - 10, H - 10, W - 30, H - 10);
-        doc.line(W - 10, H - 10, W - 10, H - 30);
-      };
-
-      const drawDiamondDivider = (y: number) => {
-        doc.setDrawColor(GOLD);
-        doc.setLineWidth(0.3);
-        doc.line(30, y, W / 2 - 5, y);
-        doc.line(W / 2 + 5, y, W - 30, y);
-        // Diamond
-        doc.setFillColor(GOLD);
-        const cx = W / 2, cy = y;
-        doc.triangle(cx, cy - 2.5, cx + 2.5, cy, cx, cy + 2.5, "F");
-        doc.triangle(cx, cy - 2.5, cx - 2.5, cy, cx, cy + 2.5, "F");
-      };
-
-      // ─── COVER PAGE ───
-      doc.setFillColor(BG);
-      doc.rect(0, 0, W, H, "F");
-      drawDecoCorners(1);
-
-      // Geometric deco lines
-      doc.setDrawColor(GOLD);
-      doc.setLineWidth(0.2);
-      for (let i = 0; i < 5; i++) {
-        doc.line(15 + i * 3, 50, 15 + i * 3, 80);
-        doc.line(W - 15 - i * 3, 50, W - 15 - i * 3, 80);
+      // ─── Capture cover ───
+      const coverEl = document.getElementById("pdf-cover");
+      if (coverEl) {
+        const coverCanvas = await html2canvas(coverEl, {
+          backgroundColor: "#0A0A0A",
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        const coverImg = coverCanvas.toDataURL("image/jpeg", 0.95);
+        doc.addImage(coverImg, "JPEG", 0, 0, pdfW, pdfH);
       }
 
-      // Title
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(32);
-      doc.setTextColor(GOLD);
-      doc.text("ROTEIRO DE VIAGEM", W / 2, 110, { align: "center" });
+      // ─── Capture content ───
+      const contentEl = document.getElementById("roteiro-content");
+      if (contentEl) {
+        const contentCanvas = await html2canvas(contentEl, {
+          backgroundColor: "#0A0A0A",
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          windowWidth: 900,
+        });
 
-      doc.setFontSize(18);
-      doc.setTextColor(WHITE);
-      doc.text(tripName, W / 2, 130, { align: "center" });
+        const imgData = contentCanvas.toDataURL("image/jpeg", 0.92);
+        const imgW = pdfW;
+        const imgH = (contentCanvas.height * pdfW) / contentCanvas.width;
 
-      drawDiamondDivider(145);
+        // Split into pages
+        const pageContentH = pdfH;
+        let offsetY = 0;
+        let first = true;
 
-      doc.setFontSize(11);
-      doc.setTextColor(GRAY);
-      const today = new Date().toLocaleDateString("pt-BR", { year: "numeric", month: "long", day: "numeric" });
-      doc.text(`Planejado em ${today}`, W / 2, 158, { align: "center" });
+        while (offsetY < imgH) {
+          if (!first || coverEl) doc.addPage();
+          first = false;
 
-      doc.setFontSize(10);
-      doc.setTextColor(GOLD);
-      doc.text("VOYA — Seu assistente de viagem inteligente", W / 2, 172, { align: "center" });
-
-      // Budget on cover
-      doc.setFontSize(14);
-      doc.setTextColor(GOLD);
-      doc.text("ORÇAMENTO TOTAL ESTIMADO", W / 2, 200, { align: "center" });
-      doc.setFontSize(28);
-      doc.text(formatCurrency(totalBudget), W / 2, 215, { align: "center" });
-
-      // ─── CONTENT PAGES ───
-      const sections = [
-        { title: "VOOS", items: flights, icon: "✈️" },
-        { title: "HOTÉIS", items: hotels, icon: "🏨" },
-        { title: "RESTAURANTES", items: restaurants, icon: "🍽️" },
-        { title: "ATRAÇÕES", items: attractions, icon: "🎯" },
-      ].filter(s => s.items.length > 0);
-
-      let currentY = 0;
-      let pageNum = 1;
-
-      const newContentPage = () => {
-        doc.addPage();
-        pageNum++;
-        doc.setFillColor(BG);
-        doc.rect(0, 0, W, H, "F");
-        drawDecoCorners(pageNum);
-        currentY = 25;
-      };
-
-      const checkSpace = (needed: number) => {
-        if (currentY + needed > H - 25) newContentPage();
-      };
-
-      for (const section of sections) {
-        newContentPage();
-
-        // Section header
-        doc.setFontSize(18);
-        doc.setTextColor(GOLD);
-        doc.text(`${section.icon}  ${section.title}`, 20, currentY);
-        currentY += 4;
-        drawDiamondDivider(currentY);
-        currentY += 10;
-
-        const subtotal = getCategoryTotal(section.items);
-        doc.setFontSize(9);
-        doc.setTextColor(GRAY);
-        doc.text(`${section.items.length} ${section.items.length === 1 ? "item" : "itens"} · Subtotal: ${formatCurrency(subtotal)}`, 20, currentY);
-        currentY += 10;
-
-        for (const ti of section.items) {
-          checkSpace(35);
-
-          // Item box
-          doc.setFillColor("#111111");
-          doc.roundedRect(18, currentY - 2, W - 36, 28, 2, 2, "F");
-          doc.setDrawColor("#222222");
-          doc.roundedRect(18, currentY - 2, W - 36, 28, 2, 2, "S");
-
-          doc.setFontSize(12);
-          doc.setTextColor(WHITE);
-          doc.text(ti.item.name, 24, currentY + 7);
-
-          if (ti.selectedClass) {
-            doc.setFontSize(8);
-            doc.setTextColor(GOLD);
-            doc.text(`[${ti.selectedClass}]`, 24 + doc.getTextWidth(ti.item.name) + 4, currentY + 7);
+          // Use a canvas slice for each page
+          const sliceCanvas = document.createElement("canvas");
+          sliceCanvas.width = contentCanvas.width;
+          const sliceH = Math.min(
+            (pageContentH / pdfW) * contentCanvas.width,
+            contentCanvas.height - (offsetY / imgH) * contentCanvas.height
+          );
+          sliceCanvas.height = sliceH;
+          const ctx = sliceCanvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(
+              contentCanvas,
+              0, (offsetY / imgH) * contentCanvas.height,
+              contentCanvas.width, sliceH,
+              0, 0,
+              contentCanvas.width, sliceH,
+            );
+            const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+            const sliceDisplayH = (sliceH * pdfW) / contentCanvas.width;
+            doc.addImage(sliceData, "JPEG", 0, 0, imgW, sliceDisplayH);
           }
 
-          const displayLoc = ti.item.kind === "restaurant" && ti.item.description
-            ? ti.item.description.split("|")[0]?.trim()
-            : ti.item.location || "";
-
-          if (displayLoc && displayLoc.length < 60 && !displayLoc.includes("%")) {
-            doc.setFontSize(8);
-            doc.setTextColor(GRAY);
-            doc.text(`📍 ${displayLoc}`, 24, currentY + 15);
-          }
-
-          // Price
-          const priceText = ti.item.price.replace(/\/noite/gi, "").trim();
-          doc.setFontSize(12);
-          doc.setTextColor(GOLD);
-          doc.text(priceText, W - 22, currentY + 7, { align: "right" });
-
-          if (ti.item.kind === "hotel") {
-            doc.setFontSize(7);
-            doc.setTextColor(GRAY);
-            doc.text("/noite", W - 22, currentY + 13, { align: "right" });
-          }
-
-          // Maps link
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ti.item.name)}`;
-          doc.setFontSize(7);
-          doc.setTextColor(GOLD);
-          doc.text("Abrir no Maps →", 24, currentY + 22);
-          doc.link(24, currentY + 18, 40, 6, { url: mapsUrl });
-
-          currentY += 34;
+          offsetY += pageContentH;
         }
       }
 
-      // ─── BUDGET SUMMARY PAGE ───
-      newContentPage();
-      doc.setFontSize(18);
-      doc.setTextColor(GOLD);
-      doc.text("📊  RESUMO DO ORÇAMENTO", 20, currentY);
-      currentY += 4;
-      drawDiamondDivider(currentY);
-      currentY += 14;
-
-      const budgetRows = [
-        { label: "Voos", total: getCategoryTotal(flights), count: flights.length },
-        { label: "Hotéis", total: getCategoryTotal(hotels), count: hotels.length },
-        { label: "Restaurantes", total: getCategoryTotal(restaurants), count: restaurants.length },
-        { label: "Atrações", total: getCategoryTotal(attractions), count: attractions.length },
-      ].filter(r => r.count > 0);
-
-      for (const row of budgetRows) {
-        doc.setFillColor("#111111");
-        doc.roundedRect(18, currentY - 2, W - 36, 14, 2, 2, "F");
-
-        doc.setFontSize(11);
-        doc.setTextColor(WHITE);
-        doc.text(`${row.label} (${row.count})`, 24, currentY + 7);
-
-        doc.setTextColor(GOLD);
-        doc.text(formatCurrency(row.total), W - 22, currentY + 7, { align: "right" });
-
-        currentY += 18;
-      }
-
-      // Total
-      currentY += 5;
-      doc.setDrawColor(GOLD);
-      doc.setLineWidth(0.5);
-      doc.line(18, currentY, W - 18, currentY);
-      currentY += 10;
-
-      doc.setFontSize(16);
-      doc.setTextColor(WHITE);
-      doc.text("TOTAL ESTIMADO", 24, currentY);
-      doc.setTextColor(GOLD);
-      doc.setFontSize(20);
-      doc.text(formatCurrency(totalBudget), W - 22, currentY, { align: "right" });
-
-      // Footer
-      currentY += 30;
-      doc.setFontSize(8);
-      doc.setTextColor(GRAY);
-      doc.text("Gerado pelo Voya — voya-plan-it.lovable.app", W / 2, currentY, { align: "center" });
-
+      setShowCover(false);
       doc.save("roteiro-voya.pdf");
     } catch (err) {
       console.error("Erro ao gerar PDF:", err);
+      setShowCover(false);
     } finally {
       setGenerating(false);
     }
@@ -380,6 +311,13 @@ const Roteiro = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Off-screen cover for PDF */}
+      {showCover && (
+        <div ref={coverRef} style={{ position: "fixed", left: "-9999px", top: 0, zIndex: -1 }}>
+          <PdfCover tripName={tripName} totalBudget={totalBudget} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-lg">
         <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
@@ -403,8 +341,8 @@ const Roteiro = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-10">
+      {/* Content (captured by html2canvas) */}
+      <div id="roteiro-content" className="max-w-4xl mx-auto px-6 py-8 space-y-10">
         <Section title="Voos" icon={<Plane className="w-5 h-5" />} items={flights} subtotal={getCategoryTotal(flights)} />
         <Section title="Hotéis" icon={<Hotel className="w-5 h-5" />} items={hotels} subtotal={getCategoryTotal(hotels)} />
         <Section title="Restaurantes" icon={<UtensilsCrossed className="w-5 h-5" />} items={restaurants} subtotal={getCategoryTotal(restaurants)} />
