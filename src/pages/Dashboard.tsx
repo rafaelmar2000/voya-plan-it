@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useMyTrip } from "@/contexts/MyTripContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +27,8 @@ const WELCOME_MESSAGE: Message = {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { clearTrip, setOnItemAdded, loadTripForRoteiro, saveTripForRoteiro } = useMyTrip();
+  const navigate = useNavigate();
+  const { items, clearTrip, setOnItemAdded, loadTripForRoteiro, saveTripForRoteiro } = useMyTrip();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeRoteiroId, setActiveRoteiroId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -348,6 +350,23 @@ const Dashboard = () => {
             <div ref={messagesEndRef} />
           </div>
         </div>
+        {/* Floating Roteiro Button */}
+        {(() => {
+          const hasFlight = items.some(i => i.item.kind === "flight");
+          const hasHotel = items.some(i => i.item.kind === "hotel" || i.item.kind === "generic");
+          if (!hasFlight || !hasHotel) return null;
+          return (
+            <div className="px-4 sm:px-6 pb-2">
+              <button
+                onClick={() => navigate("/roteiro")}
+                className="w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-medium hover:bg-primary/20 transition-all"
+              >
+                <Sparkles className="w-4 h-4" />
+                Ver Roteiro Completo
+              </button>
+            </div>
+          );
+        })()}
 
         <DashboardChatInput onSend={handleSend} loading={thinking} />
       </div>
