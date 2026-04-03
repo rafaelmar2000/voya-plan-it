@@ -69,8 +69,7 @@ function extractNumericPrice(price: string): number {
     const lo = parseFloat(rangeMatch[1].replace(/\./g, "").replace(",", "."));
     const hi = parseFloat(rangeMatch[2].replace(/\./g, "").replace(",", "."));
     if (!isNaN(lo) && !isNaN(hi)) {
-      const avg = (lo + hi) / 2;
-      return /R\$/i.test(s) ? avg : avg * 5.7;
+      return /R\$/i.test(s) ? hi : hi * 5.7;
     }
   }
 
