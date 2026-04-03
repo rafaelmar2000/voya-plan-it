@@ -50,6 +50,9 @@ function removeFromStorage(roteiroId: string | null) {
 }
 
 function extractNumericPrice(price: string): number {
+  if (price.includes("50") || price.includes("100")) {
+    alert("PRICE: " + JSON.stringify(price));
+  }
   console.log("PRICE INPUT:", JSON.stringify(price));
   const s = price.trim().replace(/\s*\/noite/gi, "").replace(/\s*\/night/gi, "");
   console.log("PRICE CLEANED:", JSON.stringify(s));
