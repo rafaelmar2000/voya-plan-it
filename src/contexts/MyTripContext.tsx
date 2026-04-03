@@ -120,6 +120,7 @@ export function MyTripProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback((item: ParsedHotel, selectedClass?: string) => {
     const id = `${item.name}-${item.kind}-${selectedClass || ""}`;
     const newItem: TripItem = { id, item, selectedClass, priceNumeric: extractNumericPrice(item.price) };
+    alert("priceNumeric para " + item.name + ": " + newItem.priceNumeric);
     setItems((prev) => {
       if (prev.some((i) => i.id === id)) return prev;
       return [...prev, newItem];
