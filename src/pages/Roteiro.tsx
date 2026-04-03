@@ -95,8 +95,14 @@ const Section = ({ title, icon, items, subtotal, isEstimate }: SectionProps) => 
 const ItemCard = ({ tripItem }: { tripItem: TripItem }) => {
   const item = tripItem.item;
   const image = getImageForItem(tripItem);
+  const isFlight = item.kind === "flight";
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + (item.location ? " " + item.location : ""))}`;
   const displayLocation = getDisplayLocation(item);
+
+  // Parse flight description: "GIG ✈️ JFK | 08:00 - 14:30 | Voo AA123 | Direto"
+  const flightParts = isFlight && item.description ? item.description.split("|").map(s => s.trim()) : [];
+  const flightRoute = flightParts.length > 0 ? flightParts[0] : "";
+  const flightDetails = flightParts.length > 1 ? flightParts.slice(1).join(" · ") : "";
 
   return (
     <div className="rounded-lg border border-border/40 bg-card/30 backdrop-blur-sm overflow-hidden hover:border-primary/30 transition-all">
@@ -121,20 +127,36 @@ const ItemCard = ({ tripItem }: { tripItem: TripItem }) => {
       </div>
       <div className="p-3 space-y-1.5">
         <h4 className="font-semibold text-foreground text-sm">{item.name}</h4>
-        {displayLocation && (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3 shrink-0" />
-            {displayLocation}
-          </p>
+        {isFlight ? (
+          <>
+            {flightRoute && (
+              <p className="flex items-center gap-1 text-xs text-primary font-medium">
+                <Plane className="w-3 h-3 shrink-0" />
+                {flightRoute}
+              </p>
+            )}
+            {flightDetails && (
+              <p className="text-[11px] text-muted-foreground">{flightDetails}</p>
+            )}
+          </>
+        ) : (
+          <>
+            {displayLocation && (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3 shrink-0" />
+                {displayLocation}
+              </p>
+            )}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+            >
+              Abrir no Maps <ExternalLink className="w-3 h-3" />
+            </a>
+          </>
         )}
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-        >
-          Abrir no Maps <ExternalLink className="w-3 h-3" />
-        </a>
       </div>
     </div>
   );
