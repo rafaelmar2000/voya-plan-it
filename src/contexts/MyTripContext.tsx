@@ -50,7 +50,7 @@ function removeFromStorage(roteiroId: string | null) {
 }
 
 function extractNumericPrice(price: string): number {
-  const s = price.trim();
+  const s = price.trim().replace(/\s*\/noite/gi, "").replace(/\s*\/night/gi, "");
 
   // Dollar sign tiers: $$ = 50, $$$ = 100, $$$$ = 200
   const tierMatch = s.match(/^(\${2,4})$/);
